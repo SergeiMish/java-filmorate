@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -36,6 +37,10 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film deleteFilm(Film film) {
         return null;
+    }
+
+    public Film getFilmById(Long id) {
+        return films.get(id);
     }
 
     @Override
