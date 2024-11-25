@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
@@ -11,7 +12,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
+@Slf4j
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
 
@@ -19,15 +20,19 @@ public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
     private final LocalDate localDateMin = LocalDate.of(1895, 12, 28);
 
-    @Override
     public Film createFilm(Film film) {
+        log.info("Attempting to create film: {}", film);
+
         if (film.getReleaseDate().isBefore(localDateMin) || film.getReleaseDate().isEqual(localDateMin)) {
+            log.warn("Release date is before the minimum allowed date: {}", film.getReleaseDate());
             throw new ValidationException("Дата релиза должна быть не раньше 28 декабря 1895 года");
         }
+
         film.setId(getNextId());
         films.put(film.getId(), film);
-        return film;
 
+        log.info("Successfully created film with ID: {}", film.getId());
+        return film;
     }
 
     public Collection<Film> getAllFilms() {

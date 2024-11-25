@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
@@ -17,26 +18,32 @@ public class FilmService {
         this.inMemoryFilmStorage = inMemoryFilmStorage;
     }
 
-    public void addLike (Long id, Long likeId){
+    public Film addLike(Long id, Long userId) {
         Film film = inMemoryFilmStorage.getFilmById(id);
-        Film filmLike = inMemoryFilmStorage.getFilmById(likeId);
-        if (film != null && filmLike != null) {
-            film.getLikes().add(likeId);
-            filmLike.getLikes().add(id);
-            inMemoryFilmStorage.updateFilm(film);
-            inMemoryFilmStorage.updateFilm(filmLike);
+        if (film == null) {
+            throw new ValidationException("ID " + id + " не найден");
         }
+
+        if (!film.getLikes().contains(userId)) {
+            film.getLikes().add(userId);
+            inMemoryFilmStorage.updateFilm(film);
+        }
+
+        return film;
     }
 
-    public void removeLike (Long id, Long likeId){
+    public Film removeLike(Long id, Long userId) {
         Film film = inMemoryFilmStorage.getFilmById(id);
-        Film filmLike = inMemoryFilmStorage.getFilmById(likeId);
-        if (film != null && filmLike != null) {
-            film.getLikes().remove(likeId);
-            filmLike.getLikes().remove(id);
-            inMemoryFilmStorage.updateFilm(film);
-            inMemoryFilmStorage.updateFilm(filmLike);
+        if (film == null) {
+            throw new ValidationException("ID " + id + " не найден");
         }
+
+        if (film.getLikes().contains(userId)) {
+            film.getLikes().remove(userId);
+            inMemoryFilmStorage.updateFilm(film);
+        }
+
+        return film;
     }
 
     public List<Film> mostPopularFilms(int limit) {

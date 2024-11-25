@@ -12,19 +12,21 @@ import ru.yandex.practicum.filmorate.model.ErrorResponse;
 @RestControllerAdvice
 public class ErrorHandler {
 
-    @ExceptionHandler
+    @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse ValidationExc(final ValidationException e){
+    public ErrorResponse handleValidationException(final ValidationException e) {
         return new ErrorResponse(e.getMessage());
     }
-    @ExceptionHandler
+
+    @ExceptionHandler(NotFoundObjectException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse NotFoundExc(final NotFoundObjectException e){
+    public ErrorResponse handleNotFoundObjectException(final NotFoundObjectException e) {
         return new ErrorResponse(e.getMessage());
     }
-    @ExceptionHandler
+
+    @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse TrowExc(final ThrowableException e){
+    public ErrorResponse handleGenericException(final Exception e) {
         return new ErrorResponse("Произошла непредвиденная ошибка.");
     }
 }

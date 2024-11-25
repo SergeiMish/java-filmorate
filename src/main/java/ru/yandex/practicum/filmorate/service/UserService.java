@@ -2,10 +2,13 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,26 +23,47 @@ public class UserService {
     }
 
 
-    public void addFriend(Long id, Long friendId) {
+    public User addFriend(Long id, Long friendId) {
         User user = inMemoryUserStorage.getUserById(id);
         User friend = inMemoryUserStorage.getUserById(friendId);
-        if (user != null && friend != null) {
+        if (user == null) {
+            throw new NotFoundObjectException("ID " + id + " не найден");
+        }
+        if (friend == null) {
+            throw new NotFoundObjectException("ID " + friendId + " не найден");
+        }
+
+        if (!user.getFriends().contains(friendId)) {
             user.getFriends().add(friendId);
             friend.getFriends().add(id);
             inMemoryUserStorage.updateUser(user);
             inMemoryUserStorage.updateUser(friend);
         }
+
+        return user;
     }
 
-    public void removeFromFriends (Long id, Long friendId) {
+    public User removeFromFriends(Long id, Long friendId) {
         User user = inMemoryUserStorage.getUserById(id);
         User friend = inMemoryUserStorage.getUserById(friendId);
-        if (user != null && friend != null) {
-            user.getFriends().remove(friendId);
-            friend.getFriends().remove(id);
-            inMemoryUserStorage.updateUser(user);
-            inMemoryUserStorage.updateUser(friend);
+
+        if (user == null) {
+            throw new NotFoundObjectException("Пользователь с ID " + id + " не найден");
         }
+        if (friend == null) {
+            throw new NotFoundObjectException("Пользователь с ID " + friendId + " не найден");
+        }
+
+        if (!user.getFriends().contains(friendId)) {
+            throw new ValidationException("Пользователь с ID " + friendId + " не является другом пользователя с ID " + id);
+        }
+
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(id);
+        inMemoryUserStorage.updateUser(user);
+        inMemoryUserStorage.updateUser(friend);
+
+        return user;
     }
 
     public Set<User> listFriends(Long id) {
@@ -50,6 +74,24 @@ public class UserService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
         }
-        return Set.of();
+        throw new NotFoundObjectException("Объект не найден");
+    }
+
+    public Set<User> getCommonFriends(Long userId, Long otherUserId) {
+        User user = inMemoryUserStorage.getUserById(userId);
+        User otherUser = inMemoryUserStorage.getUserById(otherUserId);
+
+        if (user == null || otherUser == null) {
+            throw new NotFoundObjectException("Объект не найден");
+        }
+
+        Set<Long> userFriends = user.getFriends();
+        Set<Long> otherUserFriends = otherUser.getFriends();
+
+        return userFriends.stream()
+                .filter(otherUserFriends::contains)
+                .map(inMemoryUserStorage::getUserById)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 }
