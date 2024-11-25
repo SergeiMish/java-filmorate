@@ -30,7 +30,7 @@ public class FilmController {
 
     @GetMapping
     public Collection<Film> getFilms() {
-        return inMemoryFilmStorage.getFilm();
+        return inMemoryFilmStorage.getAllFilms();
     }
 
     @PutMapping

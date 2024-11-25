@@ -29,7 +29,7 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     }
 
-    public Collection<Film> getFilm() {
+    public Collection<Film> getAllFilms() {
         return films.values();
     }
 

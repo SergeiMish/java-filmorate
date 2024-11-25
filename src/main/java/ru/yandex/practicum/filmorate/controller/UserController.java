@@ -28,7 +28,7 @@ public class UserController {
 
     @GetMapping
     public Collection<User> getUsers() {
-        return inMemoryUserStorage.getUser();
+        return inMemoryUserStorage.getAllUsers();
     }
 
     @PutMapping

@@ -29,7 +29,7 @@ public class InMemoryUserStorage implements UserStorage {
         return null;
     }
 
-    public Collection<User> getUser() {
+    public Collection<User> getAllUsers() {
         return users.values();
     }
 
@@ -43,6 +43,10 @@ public class InMemoryUserStorage implements UserStorage {
         }
         users.put(user.getId(), user);
         return user;
+    }
+
+    public User getUserById(Long id) {
+        return users.get(id);
     }
 
     private long getNextId() {
