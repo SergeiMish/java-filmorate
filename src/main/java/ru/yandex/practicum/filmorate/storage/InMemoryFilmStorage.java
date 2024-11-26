@@ -7,12 +7,12 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 @Slf4j
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
@@ -23,22 +23,22 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     public Film createFilm(Film film) {
 
-        // Проверка названия фильма
         if (film.getName() == null || film.getName().isEmpty()) {
             throw new ValidationException("Название фильма не может быть пустым");
         }
 
-        // Проверка описания фильма
         if (film.getDescription() == null || film.getDescription().isEmpty()) {
             throw new ValidationException("Описание фильма не может быть пустым");
         }
 
-        // Проверка даты релиза
+        if (film.getDescription().length() > 200) {
+            throw new ValidationException("Описание фильма не может быть больше 200 символов");
+        }
+
         if (film.getReleaseDate().isBefore(localDateMin) || film.getReleaseDate().isEqual(localDateMin)) {
             throw new ValidationException("Дата релиза должна быть не раньше 28 декабря 1895 года");
         }
 
-        // Проверка продолжительности фильма
         if (film.getDuration() <= 0) {
             throw new ValidationException("Продолжительность фильма должна быть положительной");
         }

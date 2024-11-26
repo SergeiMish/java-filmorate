@@ -4,7 +4,9 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.util.Comparator;
 import java.util.List;
@@ -14,15 +16,23 @@ import java.util.stream.Collectors;
 public class FilmService {
 
     private final InMemoryFilmStorage inMemoryFilmStorage;
+    private final InMemoryUserStorage inMemoryUserStorage;
 
-    public FilmService(InMemoryFilmStorage inMemoryFilmStorage) {
+    public FilmService(InMemoryFilmStorage inMemoryFilmStorage, InMemoryUserStorage inMemoryUserStorage) {
         this.inMemoryFilmStorage = inMemoryFilmStorage;
+        this.inMemoryUserStorage = inMemoryUserStorage;
     }
 
-    public Film addLike(Long id, Long userId) {
-        Film film = inMemoryFilmStorage.getFilmById(id);
+    public Film addLike(Long filmId, Long userId) {
+        // Проверка существования фильма
+        Film film = inMemoryFilmStorage.getFilmById(filmId);
         if (film == null) {
-            throw new NotFoundObjectException("Фильм с ID " + id + " не найден");
+            throw new NotFoundObjectException("Фильм с ID " + filmId + " не найден");
+        }
+
+        User user = inMemoryUserStorage.getUserById(userId);
+        if (user == null) {
+            throw new NotFoundObjectException("Пользователь с ID " + userId + " не найден");
         }
 
         if (!film.getLikes().contains(userId)) {
@@ -33,10 +43,16 @@ public class FilmService {
         return film;
     }
 
-    public Film removeLike(Long id, Long userId) {
-        Film film = inMemoryFilmStorage.getFilmById(id);
+    public Film removeLike(Long filmId, Long userId) {
+
+        Film film = inMemoryFilmStorage.getFilmById(filmId);
         if (film == null) {
-            throw new NotFoundObjectException("Фильм с ID " + id + " не найден");
+            throw new NotFoundObjectException("Фильм с ID " + filmId + " не найден");
+        }
+
+        User user = inMemoryUserStorage.getUserById(userId);
+        if (user == null) {
+            throw new NotFoundObjectException("Пользователь с ID " + userId + " не найден");
         }
 
         if (film.getLikes().contains(userId)) {

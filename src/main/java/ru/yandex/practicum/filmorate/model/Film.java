@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
-import org.hibernate.validator.constraints.Length;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,7 +20,6 @@ public class Film {
     @NotBlank
     private String name;
     @NotBlank
-    @Length(max = 200)
     private String description;
     @NotNull
     @PastOrPresent

@@ -3,12 +3,10 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -52,10 +50,6 @@ public class UserService {
         }
         if (friend == null) {
             throw new NotFoundObjectException("Пользователь с ID " + friendId + " не найден");
-        }
-
-        if (!user.getFriends().contains(friendId)) {
-            throw new NotFoundObjectException("Пользователь с ID " + friendId + " не является другом пользователя с ID " + id);
         }
 
         user.getFriends().remove(friendId);
