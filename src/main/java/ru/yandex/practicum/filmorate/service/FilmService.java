@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
@@ -21,7 +22,7 @@ public class FilmService {
     public Film addLike(Long id, Long userId) {
         Film film = inMemoryFilmStorage.getFilmById(id);
         if (film == null) {
-            throw new ValidationException("ID " + id + " не найден");
+            throw new NotFoundObjectException("Фильм с ID " + id + " не найден");
         }
 
         if (!film.getLikes().contains(userId)) {
@@ -35,7 +36,7 @@ public class FilmService {
     public Film removeLike(Long id, Long userId) {
         Film film = inMemoryFilmStorage.getFilmById(id);
         if (film == null) {
-            throw new ValidationException("ID " + id + " не найден");
+            throw new NotFoundObjectException("Фильм с ID " + id + " не найден");
         }
 
         if (film.getLikes().contains(userId)) {
@@ -47,6 +48,9 @@ public class FilmService {
     }
 
     public List<Film> mostPopularFilms(int limit) {
+        if (limit <= 0) {
+            throw new ValidationException("Параметр count должен быть положительным числом");
+        }
         return inMemoryFilmStorage.getAllFilms().stream()
                 .sorted(Comparator.comparingInt(Film::getLikesCount).reversed())
                 .limit(limit)

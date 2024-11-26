@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,13 +18,28 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User createUser(User user) {
+
+        if (user.getLogin() == null || user.getLogin().isEmpty()) {
+            throw new ValidationException("Логин не может быть пустым");
+        }
+
+        if (user.getEmail() == null || user.getEmail().isEmpty() || !user.getEmail().contains("@")) {
+            throw new ValidationException("Некорректный email");
+        }
+
+        if (user.getBirthday() == null || user.getBirthday().isAfter(LocalDate.now())) {
+            throw new ValidationException("Дата рождения не может быть в будущем");
+        }
+
         if (user.getName() == null || user.getName().isEmpty()) {
             user.setName(user.getLogin());
         }
+
         user.setId(getNextId());
         users.put(user.getId(), user);
         return user;
     }
+
 
     @Override
     public User deleteUser(User user) {
