@@ -55,7 +55,7 @@ public class UserService {
         }
 
         if (!user.getFriends().contains(friendId)) {
-            throw new ValidationException("Пользователь с ID " + friendId + " не является другом пользователя с ID " + id);
+            throw new NotFoundObjectException("Пользователь с ID " + friendId + " не является другом пользователя с ID " + id);
         }
 
         user.getFriends().remove(friendId);

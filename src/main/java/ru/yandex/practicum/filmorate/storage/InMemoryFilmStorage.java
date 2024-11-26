@@ -22,37 +22,30 @@ public class InMemoryFilmStorage implements FilmStorage {
     private final LocalDate localDateMin = LocalDate.of(1895, 12, 28);
 
     public Film createFilm(Film film) {
-        log.info("Attempting to create film: {}", film);
 
         // Проверка названия фильма
         if (film.getName() == null || film.getName().isEmpty()) {
-            log.warn("Film name is empty");
             throw new ValidationException("Название фильма не может быть пустым");
         }
 
         // Проверка описания фильма
         if (film.getDescription() == null || film.getDescription().isEmpty()) {
-            log.warn("Film description is empty");
             throw new ValidationException("Описание фильма не может быть пустым");
         }
 
         // Проверка даты релиза
         if (film.getReleaseDate().isBefore(localDateMin) || film.getReleaseDate().isEqual(localDateMin)) {
-            log.warn("Release date is before the minimum allowed date: {}", film.getReleaseDate());
             throw new ValidationException("Дата релиза должна быть не раньше 28 декабря 1895 года");
         }
 
         // Проверка продолжительности фильма
         if (film.getDuration() <= 0) {
-            log.warn("Film duration is not positive: {}", film.getDuration());
             throw new ValidationException("Продолжительность фильма должна быть положительной");
         }
 
-        // Установка ID и добавление фильма в хранилище
         film.setId(getNextId());
         films.put(film.getId(), film);
 
-        log.info("Successfully created film with ID: {}", film.getId());
         return film;
     }
 

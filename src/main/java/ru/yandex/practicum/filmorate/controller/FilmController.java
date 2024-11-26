@@ -24,7 +24,6 @@ public class FilmController {
 
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     public Film postFilm(@RequestBody Film film) {
         return inMemoryFilmStorage.createFilm(film);
     }
