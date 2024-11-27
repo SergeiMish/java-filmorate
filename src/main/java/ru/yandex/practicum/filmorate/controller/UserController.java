@@ -1,42 +1,57 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Set;
 
 
 @RestController
 @RequestMapping("/users")
-@Slf4j
+@Validated
 public class UserController {
 
-    private final InMemoryUserStorage inMemoryUserStorage;
+    private final UserStorage userStorage;
     private final UserService userService;
 
-    public UserController(InMemoryUserStorage inMemoryUserStorage, UserService userService) {
-        this.inMemoryUserStorage = inMemoryUserStorage;
+    @Autowired
+    public UserController(UserStorage userStorage, UserService userService) {
+        this.userStorage = userStorage;
         this.userService = userService;
     }
 
     @PostMapping
-    public User postUser(@Valid @RequestBody User user) {
-        return inMemoryUserStorage.createUser(user);
+    public User postUser(@RequestBody User user) {
+        if (user.getLogin() == null || user.getLogin().isEmpty()) {
+            throw new ValidationException("Логин не может быть пустым");
+        }
+        if (user.getEmail() == null || user.getEmail().isEmpty() || !user.getEmail().contains("@")) {
+            throw new ValidationException("Некорректный email");
+        }
+        if (user.getLogin().contains(" ")) {
+            throw new ValidationException("Логин не должен содержать пробелы");
+        }
+        if (user.getBirthday() == null || user.getBirthday().isAfter(LocalDate.now())) {
+            throw new ValidationException("Дата рождения не может быть в будущем");
+        }
+        return userStorage.createUser(user);
     }
 
     @GetMapping
     public Collection<User> getUsers() {
-        return inMemoryUserStorage.getAllUsers();
+        return userStorage.getAllUsers();
     }
 
     @GetMapping("/{id}")
     public User getUserById(@PathVariable Long id) {
-        return inMemoryUserStorage.getUserById(id);
+        return userStorage.getUserById(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
@@ -45,7 +60,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    private Set<User> friendsLis(@PathVariable Long id) {
+    public Set<User> getFriends(@PathVariable Long id) {
         return userService.listFriends(id);
     }
 
@@ -56,12 +71,12 @@ public class UserController {
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public User deleteFriends(@PathVariable Long id, @PathVariable Long friendId) {
-        return userService.removeFromFriends(id, friendId);
+        return userService.removeFriend(id, friendId);
     }
 
     @PutMapping
-    public User putUser(@Valid @RequestBody User user) {
-        return inMemoryUserStorage.updateUser(user);
+    public User putUser(@RequestBody User user) {
+        return userStorage.updateUser(user);
     }
 
 }

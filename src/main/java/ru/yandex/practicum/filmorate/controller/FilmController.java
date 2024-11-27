@@ -1,44 +1,71 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/films")
 public class FilmController {
 
-    private final InMemoryFilmStorage inMemoryFilmStorage;
+    private final FilmStorage filmStorage;
     private final FilmService filmService;
+    private final ValidateFilm filmValidator;
 
-    public FilmController(InMemoryFilmStorage inMemoryFilmStorage, FilmService filmService) {
-        this.inMemoryFilmStorage = inMemoryFilmStorage;
+    @Autowired
+    public FilmController(FilmStorage filmStorage, FilmService filmService, ValidateFilm filmValidator) {
+        this.filmStorage = filmStorage;
         this.filmService = filmService;
+        this.filmValidator = filmValidator;
     }
 
 
     @PostMapping
     public Film postFilm(@RequestBody Film film) {
-        return inMemoryFilmStorage.createFilm(film);
+        if (film.getName() == null || film.getName().isEmpty()) {
+            throw new ValidationException("Название фильма не может быть пустым");
+        }
+
+        if (film.getDescription() == null || film.getDescription().isEmpty()) {
+            throw new ValidationException("Описание фильма не может быть пустым");
+        }
+
+        if (film.getDescription().length() > 200) {
+            throw new ValidationException("Описание фильма не может быть больше 200 символов");
+        }
+
+        if (film.getDuration() <= 0) {
+            throw new ValidationException("Продолжительность фильма должна быть положительной");
+        }
+        filmValidator.validateFilm(film);
+        return filmStorage.createFilm(film);
     }
 
     @GetMapping
     public Collection<Film> getFilms() {
-        return inMemoryFilmStorage.getAllFilms();
+        return filmStorage.getAllFilms();
     }
 
     @GetMapping("/{id}")
     public Film getFilmById(@PathVariable Long id) {
-        return inMemoryFilmStorage.getFilmById(id);
+        return filmStorage.getFilmById(id);
     }
 
     @GetMapping("/popular")
     public List<Film> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") int count) {
+        if (count <= 0) {
+            throw new ValidationException("Параметр count должен быть положительным числом");
+        }
         return filmService.mostPopularFilms(count);
     }
 
@@ -54,7 +81,7 @@ public class FilmController {
 
     @PutMapping
     public Film putFilm(@Valid @RequestBody Film film) {
-        return inMemoryFilmStorage.updateFilm(film);
+        filmValidator.validateFilm(film);
+        return filmStorage.updateFilm(film);
     }
-
 }
