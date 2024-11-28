@@ -6,9 +6,8 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Primary
@@ -17,28 +16,24 @@ public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
 
     @Override
-    public User createUser(User user) {
-        if (user.getName() == null || user.getName().isEmpty()) {
-            user.setName(user.getLogin());
-        }
+    public User create(User user) {
         user.setId(getNextId());
         users.put(user.getId(), user);
         return user;
     }
 
-
     @Override
-    public User deleteUser(User user) {
+    public User delete(User user) {
         return users.remove(user.getId());
     }
 
     @Override
-    public Collection<User> getAllUsers() {
+    public Collection<User> getAll() {
         return users.values();
     }
 
     @Override
-    public User updateUser(User user) {
+    public User update(User user) {
         if (!users.containsKey(user.getId())) {
             throw new NotFoundObjectException("Пользователь не найден");
         }
@@ -51,10 +46,17 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUserById(Long id) {
+    public User getById(Long id) {
         User user = users.get(id);
         System.out.println("getUserById: " + id + " -> " + user);
         return user;
+    }
+
+    public Set<User> findByIds(Set<Long> ids) {
+        return ids.stream()
+                .map(users::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     private long getNextId() {

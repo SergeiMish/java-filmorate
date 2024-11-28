@@ -1,10 +1,10 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
@@ -31,41 +31,38 @@ public class FilmController {
 
 
     @PostMapping
-    public Film postFilm(@RequestBody Film film) {
-        if (film.getName() == null || film.getName().isEmpty()) {
-            throw new ValidationException("Название фильма не может быть пустым");
-        }
-
-        if (film.getDescription() == null || film.getDescription().isEmpty()) {
-            throw new ValidationException("Описание фильма не может быть пустым");
-        }
-
-        if (film.getDescription().length() > 200) {
-            throw new ValidationException("Описание фильма не может быть больше 200 символов");
-        }
-
-        if (film.getDuration() <= 0) {
-            throw new ValidationException("Продолжительность фильма должна быть положительной");
-        }
+    public Film postFilm(@RequestBody @Valid Film film) {
+//        if (film.getName() == null || film.getName().isEmpty()) {
+//            throw new ValidationException("Название фильма не может быть пустым");
+//        }
+//
+//        if (film.getDescription() == null || film.getDescription().isEmpty()) {
+//            throw new ValidationException("Описание фильма не может быть пустым");
+//        }
+//
+//        if (film.getDescription().length() > 200) {
+//            throw new ValidationException("Описание фильма не может быть больше 200 символов");
+//        }
+//
+//        if (film.getDuration() <= 0) {
+//            throw new ValidationException("Продолжительность фильма должна быть положительной");
+//        }
         filmValidator.validateFilm(film);
-        return filmStorage.createFilm(film);
+        return filmStorage.create(film);
     }
 
     @GetMapping
     public Collection<Film> getFilms() {
-        return filmStorage.getAllFilms();
+        return filmStorage.getAll();
     }
 
     @GetMapping("/{id}")
     public Film getFilmById(@PathVariable Long id) {
-        return filmStorage.getFilmById(id);
+        return filmStorage.getById(id);
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") int count) {
-        if (count <= 0) {
-            throw new ValidationException("Параметр count должен быть положительным числом");
-        }
+    public List<Film> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
         return filmService.mostPopularFilms(count);
     }
 
@@ -82,6 +79,6 @@ public class FilmController {
     @PutMapping
     public Film putFilm(@Valid @RequestBody Film film) {
         filmValidator.validateFilm(film);
-        return filmStorage.updateFilm(film);
+        return filmStorage.update(film);
     }
 }

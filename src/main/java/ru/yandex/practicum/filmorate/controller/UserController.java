@@ -1,14 +1,13 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Set;
 
@@ -28,30 +27,18 @@ public class UserController {
     }
 
     @PostMapping
-    public User postUser(@RequestBody User user) {
-        if (user.getLogin() == null || user.getLogin().isEmpty()) {
-            throw new ValidationException("Логин не может быть пустым");
-        }
-        if (user.getEmail() == null || user.getEmail().isEmpty() || !user.getEmail().contains("@")) {
-            throw new ValidationException("Некорректный email");
-        }
-        if (user.getLogin().contains(" ")) {
-            throw new ValidationException("Логин не должен содержать пробелы");
-        }
-        if (user.getBirthday() == null || user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
-        return userStorage.createUser(user);
+    public User postUser(@RequestBody @Valid User user) {
+        return userStorage.create(user);
     }
 
     @GetMapping
     public Collection<User> getUsers() {
-        return userStorage.getAllUsers();
+        return userStorage.getAll();
     }
 
     @GetMapping("/{id}")
     public User getUserById(@PathVariable Long id) {
-        return userStorage.getUserById(id);
+        return userStorage.getById(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
@@ -76,7 +63,7 @@ public class UserController {
 
     @PutMapping
     public User putUser(@RequestBody User user) {
-        return userStorage.updateUser(user);
+        return userStorage.update(user);
     }
 
 }

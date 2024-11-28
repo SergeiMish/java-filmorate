@@ -23,16 +23,10 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public User addFriend(Long id, Long friendId) {
-        User user = userStorage.getUserById(id);
-        if (user == null) {
-            throw new NotFoundObjectException("ID " + id + " не найден");
-        }
 
-        User friend = userStorage.getUserById(friendId);
-        if (friend == null) {
-            throw new NotFoundObjectException("ID " + friendId + " не найден");
-        }
+    public User addFriend(Long id, Long friendId) {
+        User user = getUserOrThrow(id);
+        User friend = getUserOrThrow(friendId);
 
         if (id.equals(friendId)) {
             throw new ValidationException("Пользователь не может добавить себя в друзья");
@@ -40,49 +34,49 @@ public class UserService {
 
         if (user.addFriend(friendId)) {
             friend.addFriend(id);
-
-            userStorage.updateUser(friend);
-            userStorage.updateUser(user);
+            userStorage.update(friend);
+            userStorage.update(user);
         }
 
         return user;
     }
 
     public User removeFriend(Long id, Long friendId) {
-        User user = userStorage.getUserById(id);
-        User friend = userStorage.getUserById(friendId);
-
-        if (user == null) {
-            throw new NotFoundObjectException("ID " + id + " не найден");
-        }
-        if (friend == null) {
-            throw new NotFoundObjectException("ID " + friendId + " не найден");
-        }
+        User user = getUserOrThrow(id);
+        User friend = getUserOrThrow(friendId);
 
         if (user.removeFriend(friendId)) {
             friend.removeFriend(id);
-            userStorage.updateUser(user);
-            userStorage.updateUser(friend);
+            userStorage.update(user);
+            userStorage.update(friend);
         }
 
         return user;
     }
 
+    public User getUserOrThrow(Long id) {
+        User user = userStorage.getById(id);
+        if (user == null) {
+            throw new NotFoundObjectException("ID " + id + " не найден");
+        }
+        return user;
+    }
+
     public Set<User> listFriends(Long id) {
-        User user = userStorage.getUserById(id);
+        User user = userStorage.getById(id);
         if (user == null) {
             throw new NotFoundObjectException("Объект не найден");
         }
 
         return user.getFriends().stream()
-                .map(userStorage::getUserById)
+                .map(userStorage::getById)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
     public Set<User> getCommonFriends(Long userId, Long otherUserId) {
-        User user = userStorage.getUserById(userId);
-        User otherUser = userStorage.getUserById(otherUserId);
+        User user = userStorage.getById(userId);
+        User otherUser = userStorage.getById(otherUserId);
 
         if (user == null || otherUser == null) {
             throw new NotFoundObjectException("Объект не найден");
@@ -91,10 +85,10 @@ public class UserService {
         Set<Long> userFriends = user.getFriends();
         Set<Long> otherUserFriends = otherUser.getFriends();
 
-        return userFriends.stream()
+        Set<Long> commonFriendIds = userFriends.stream()
                 .filter(otherUserFriends::contains)
-                .map(userStorage::getUserById)
-                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+
+        return userStorage.findByIds(commonFriendIds);
     }
 }

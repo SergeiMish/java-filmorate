@@ -19,19 +19,19 @@ public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
 
     @Override
-    public Film createFilm(Film film) {
+    public Film create(Film film) {
         film.setId(getNextId());
         films.put(film.getId(), film);
         return film;
     }
 
     @Override
-    public Collection<Film> getAllFilms() {
+    public Collection<Film> getAll() {
         return films.values();
     }
 
     @Override
-    public Film deleteFilm(Film film) {
+    public Film delete(Film film) {
         if (!films.containsKey(film.getId())) {
             throw new NotFoundObjectException("Фильм с таким ID не найден");
         }
@@ -39,7 +39,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilmById(Long id) {
+    public Film getById(Long id) {
         Film film = films.get(id);
         if (film == null) {
             throw new NotFoundObjectException("Фильм с ID " + id + " не найден");
@@ -48,7 +48,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film updateFilm(Film film) {
+    public Film update(Film film) {
         if (!films.containsKey(film.getId())) {
             throw new NotFoundObjectException("Фильм с таким ID не найден");
         }

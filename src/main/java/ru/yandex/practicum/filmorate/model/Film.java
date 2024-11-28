@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -18,10 +18,12 @@ public class Film {
 
     private long id;
 
-    @NotBlank(message = "Название фильма не может быть пустым")
+    @NotNull(message = "Название фильма не может быть пустым")
+    @NotEmpty(message = "Название фильма не может быть пустым")
     private String name;
 
-    @NotBlank(message = "Описание фильма не может быть пустым")
+    @NotNull(message = "Описание фильма не может быть пустым")
+    @NotEmpty(message = "Описание фильма не может быть пустым")
     @Size(max = 200, message = "Описание фильма не может быть больше 200 символов")
     private String description;
 
@@ -35,5 +37,13 @@ public class Film {
 
     public int getLikesCount() {
         return likes.size();
+    }
+
+    public void addLike(Long userId) {
+        likes.add(userId);
+    }
+
+    public void removeLike(Long userId) {
+        likes.remove(userId);
     }
 }
