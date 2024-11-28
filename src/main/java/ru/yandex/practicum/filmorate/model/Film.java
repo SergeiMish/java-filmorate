@@ -1,13 +1,14 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.hibernate.validator.constraints.Length;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Film.
@@ -16,13 +17,33 @@ import java.time.LocalDate;
 public class Film {
 
     private long id;
-    @NotBlank
+
+    @NotNull(message = "Название фильма не может быть пустым")
+    @NotEmpty(message = "Название фильма не может быть пустым")
     private String name;
-    @Length(max = 200)
+
+    @NotNull(message = "Описание фильма не может быть пустым")
+    @NotEmpty(message = "Описание фильма не может быть пустым")
+    @Size(max = 200, message = "Описание фильма не может быть больше 200 символов")
     private String description;
-    @NotNull
-    @PastOrPresent
+
+    @NotNull(message = "Дата релиза не может быть null")
     private LocalDate releaseDate;
-    @Positive
+
+    @Positive(message = "Продолжительность фильма должна быть положительной")
     private int duration;
+
+    private Set<Long> likes = new HashSet<>();
+
+    public int getLikesCount() {
+        return likes.size();
+    }
+
+    public void addLike(Long userId) {
+        likes.add(userId);
+    }
+
+    public void removeLike(Long userId) {
+        likes.remove(userId);
+    }
 }
