@@ -37,9 +37,6 @@ public class InMemoryUserStorage implements UserStorage {
         if (!users.containsKey(user.getId())) {
             throw new NotFoundObjectException("Пользователь не найден");
         }
-        if (user.getName() == null || user.getName().isEmpty()) {
-            user.setName(user.getLogin());
-        }
         users.put(user.getId(), user);
         System.out.println("updateUser: " + user);
         return user;
