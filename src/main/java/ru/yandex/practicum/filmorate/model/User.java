@@ -9,7 +9,7 @@ import java.util.Set;
 
 @Data
 public class User {
-    private final Set<Long> friends = new HashSet<>();
+    private final Set<Friendship> friends = new HashSet<>();
     private long id;
     @Email(message = "Некорректный email")
     @NotBlank(message = "Email не может быть пустым")
@@ -23,12 +23,23 @@ public class User {
     private LocalDate birthday;
 
     public boolean addFriend(Long friendId) {
-        return friends.add(friendId);
+        return friends.add(new Friendship(friendId, FriendshipStatus.UNCONFIRMED));
+    }
+
+    public boolean confirmFriend(Long friendId) {
+        for (Friendship friendship : friends) {
+            if (friendship.getUserId().equals(friendId) && friendship.getStatus() == FriendshipStatus.UNCONFIRMED) {
+                friendship.setStatus(FriendshipStatus.CONFIRMED);
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean removeFriend(Long friendId) {
-        return friends.remove(friendId);
+        return friends.removeIf(friendship -> friendship.getUserId().equals(friendId));
     }
 }
+
 
 

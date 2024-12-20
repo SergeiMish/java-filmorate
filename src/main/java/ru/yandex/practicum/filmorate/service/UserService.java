@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
+import ru.yandex.practicum.filmorate.model.Friendship;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Objects;
@@ -69,6 +71,7 @@ public class UserService {
         }
 
         return user.getFriends().stream()
+                .map(Friendship::getUserId)
                 .map(userStorage::getById)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -82,11 +85,18 @@ public class UserService {
             throw new NotFoundObjectException("Объект не найден");
         }
 
-        Set<Long> userFriends = user.getFriends();
-        Set<Long> otherUserFriends = otherUser.getFriends();
+        Set<Long> userConfirmedFriends = user.getFriends().stream()
+                .filter(friendship -> friendship.getStatus() == FriendshipStatus.CONFIRMED)
+                .map(Friendship::getUserId)
+                .collect(Collectors.toSet());
 
-        Set<Long> commonFriendIds = userFriends.stream()
-                .filter(otherUserFriends::contains)
+        Set<Long> otherUserConfirmedFriends = otherUser.getFriends().stream()
+                .filter(friendship -> friendship.getStatus() == FriendshipStatus.CONFIRMED)
+                .map(Friendship::getUserId)
+                .collect(Collectors.toSet());
+
+        Set<Long> commonFriendIds = userConfirmedFriends.stream()
+                .filter(otherUserConfirmedFriends::contains)
                 .collect(Collectors.toSet());
 
         return userStorage.findByIds(commonFriendIds);
