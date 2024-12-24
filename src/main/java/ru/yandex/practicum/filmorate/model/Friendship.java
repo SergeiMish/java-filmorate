@@ -22,7 +22,3 @@ public class Friendship {
     }
 }
 
-public enum FriendshipStatus {
-    UNCONFIRMED,
-    CONFIRMED
-}
