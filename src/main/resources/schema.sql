@@ -37,3 +37,11 @@ CREATE TABLE IF NOT EXISTS FilmGenres (
                             FOREIGN KEY (film_id) REFERENCES Films(film_id),
                             FOREIGN KEY (genre_id) REFERENCES Genres(genre_id)
 );
+
+CREATE TABLE IF NOT EXISTS Likes (
+                                     film_id BIGINT,
+                                     user_id BIGINT,
+                                     PRIMARY KEY (film_id, user_id),
+                                     FOREIGN KEY (film_id) REFERENCES Films(film_id),
+                                     FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
