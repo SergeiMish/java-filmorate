@@ -32,21 +32,6 @@ public class FilmController {
 
     @PostMapping
     public Film postFilm(@RequestBody @Valid Film film) {
-//        if (film.getName() == null || film.getName().isEmpty()) {
-//            throw new ValidationException("Название фильма не может быть пустым");
-//        }
-//
-//        if (film.getDescription() == null || film.getDescription().isEmpty()) {
-//            throw new ValidationException("Описание фильма не может быть пустым");
-//        }
-//
-//        if (film.getDescription().length() > 200) {
-//            throw new ValidationException("Описание фильма не может быть больше 200 символов");
-//        }
-//
-//        if (film.getDuration() <= 0) {
-//            throw new ValidationException("Продолжительность фильма должна быть положительной");
-//        }
         filmValidator.validateFilm(film);
         return filmStorage.create(film);
     }

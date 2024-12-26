@@ -35,6 +35,10 @@ public class Film {
 
     private Set<Long> likes = new HashSet<>();
 
+    private Set<String> genres = new HashSet<>();
+
+    private MpaRating mpaRating;
+
     public int getLikesCount() {
         return likes.size();
     }

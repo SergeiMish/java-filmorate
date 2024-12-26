@@ -9,7 +9,7 @@ public interface UserStorage {
 
     User create(User user);
 
-    User delete(User user);
+    boolean delete(Long id);
 
     User update(User user);
 
