@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.mappers.UserRowMapper;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
@@ -38,7 +39,7 @@ public class UserDbStorage implements UserStorage {
             return stmt;
         }, keyHolder);
 
-        user.setId(keyHolder.getKey().longValue());
+        user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         return user;
     }
 
@@ -89,5 +90,22 @@ public class UserDbStorage implements UserStorage {
         List<User> users = jdbcTemplate.query(sqlQuery, userRowMapper, ids.toArray());
 
         return new HashSet<>(users);
+    }
+
+    @Override
+    public void addFriendship(Long userId, Long friendId, FriendshipStatus status) {
+        String sqlQuery = "INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sqlQuery, userId, friendId, status.name());
+    }
+
+    @Override
+    public void removeFriendship(Long userId, Long friendId) {
+        String sqlQuery = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
+        jdbcTemplate.update(sqlQuery, userId, friendId);
+    }
+
+    public void updateFriendshipStatus(Long userId, Long friendId, FriendshipStatus status) {
+        String sqlQuery = "UPDATE friendships SET status = ? WHERE user_id = ? AND friend_id = ?";
+        jdbcTemplate.update(sqlQuery, status.name(), userId, friendId);
     }
 }

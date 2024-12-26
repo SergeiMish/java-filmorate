@@ -77,4 +77,9 @@ public class UserController {
         return userStorage.update(user);
     }
 
+    @PutMapping("/{id}/friends/{friendId}/confirm")
+    public ResponseEntity<Void> confirmFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        userService.confirmFriendship(id, friendId);
+        return ResponseEntity.ok().build();
+    }
 }

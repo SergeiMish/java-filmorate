@@ -25,12 +25,12 @@ CREATE TABLE IF NOT EXISTS Films (
                        mpa_rating VARCHAR(10) NOT NULL
 );
 
-CREATE TABLE Genres (
+CREATE TABLE IF NOT EXISTS Genres (
                         genre_id BIGINT PRIMARY KEY AUTO_INCREMENT,
                         name VARCHAR(50) NOT NULL UNIQUE
 );
 
-CREATE TABLE FilmGenres (
+CREATE TABLE IF NOT EXISTS FilmGenres (
                             film_id BIGINT,
                             genre_id BIGINT,
                             PRIMARY KEY (film_id, genre_id),

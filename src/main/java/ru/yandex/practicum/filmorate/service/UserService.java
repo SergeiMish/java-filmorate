@@ -27,33 +27,36 @@ public class UserService {
 
 
     public User addFriend(Long id, Long friendId) {
-        User user = getUserOrThrow(id);
-        User friend = getUserOrThrow(friendId);
+        getUserOrThrow(id);
+        getUserOrThrow(friendId);
 
         if (id.equals(friendId)) {
             throw new ValidationException("Пользователь не может добавить себя в друзья");
         }
 
-        if (user.addFriend(friendId)) {
-            friend.addFriend(id);
-            userStorage.update(friend);
-            userStorage.update(user);
-        }
+        userStorage.addFriendship(id, friendId, FriendshipStatus.UNCONFIRMED);
+        userStorage.addFriendship(friendId, id, FriendshipStatus.UNCONFIRMED);
 
-        return user;
+        return getUserOrThrow(id);
     }
 
     public User removeFriend(Long id, Long friendId) {
-        User user = getUserOrThrow(id);
-        User friend = getUserOrThrow(friendId);
+        getUserOrThrow(id);
+        getUserOrThrow(friendId);
 
-        if (user.removeFriend(friendId)) {
-            friend.removeFriend(id);
-            userStorage.update(user);
-            userStorage.update(friend);
-        }
+        userStorage.removeFriendship(id, friendId);
+        userStorage.removeFriendship(friendId, id);
 
-        return user;
+        return getUserOrThrow(id);
+    }
+
+    public void confirmFriendship(Long userId, Long friendId) {
+
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
+
+        userStorage.updateFriendshipStatus(userId, friendId, FriendshipStatus.CONFIRMED);
+        userStorage.updateFriendshipStatus(friendId, userId, FriendshipStatus.CONFIRMED);
     }
 
     public User getUserOrThrow(Long id) {
