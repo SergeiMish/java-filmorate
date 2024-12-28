@@ -2,19 +2,28 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Validated
 @RestController
+@Slf4j
+@RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
 
@@ -22,18 +31,13 @@ public class FilmController {
     private final FilmService filmService;
     private final ValidateFilm filmValidator;
 
-    @Autowired
-    public FilmController(FilmStorage filmStorage, FilmService filmService, ValidateFilm filmValidator) {
-        this.filmStorage = filmStorage;
-        this.filmService = filmService;
-        this.filmValidator = filmValidator;
-    }
-
-
     @PostMapping
-    public Film postFilm(@RequestBody @Valid Film film) {
+    public ResponseEntity<Film> postFilm(@RequestBody @Valid Film film) {
+        log.info("Received request to create film: {}", film);
         filmValidator.validateFilm(film);
-        return filmStorage.create(film);
+        Film createdFilm = filmStorage.create(film);
+        log.info("Film created successfully: {}", createdFilm);
+        return ResponseEntity.ok(createdFilm);
     }
 
     @GetMapping
@@ -42,8 +46,15 @@ public class FilmController {
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable Long id) {
-        return filmStorage.getById(id);
+    public ResponseEntity<Film> getFilmById(@PathVariable Long id) {
+        try {
+            Film film = filmStorage.getById(id);
+            return ResponseEntity.ok(film);
+        } catch (NotFoundObjectException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @GetMapping("/popular")

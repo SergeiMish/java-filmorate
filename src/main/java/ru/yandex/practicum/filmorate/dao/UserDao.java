@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -16,18 +16,18 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Primary
+
 @Repository
 @RequiredArgsConstructor
-public class UserDbStorage implements UserStorage {
+public class UserDao implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
 
     @Override
     public User create(User user) {
-        String sqlQuery = "insert into users(email, login, name, birthday) " +
-                "values (?, ?, ?, ?)";
+        String sqlQuery = "INSERT INTO users (email, login, name, birthday) " +
+                "VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -40,38 +40,40 @@ public class UserDbStorage implements UserStorage {
         }, keyHolder);
 
         user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+
         return user;
     }
 
     @Override
     public boolean delete(Long id) {
-        String sqlQuery = "delete from users where user_id = ?";
+        String sqlQuery = "DELETE FROM users WHERE user_id = ?";
         return jdbcTemplate.update(sqlQuery, id) > 0;
     }
 
     @Override
     public User update(User user) {
-        String sqlQuery = "update users set " +
+        String sqlQuery = "UPDATE users SET " +
                 "email = ?, login = ?, name = ?, birthday = ?" +
-                "where user_id = ?";
+                "WHERE user_id = ?";
         jdbcTemplate.update(sqlQuery
                 , user.getEmail()
                 , user.getLogin()
                 , user.getName()
                 , Timestamp.valueOf(user.getBirthday().atStartOfDay()));
+
         return user;
     }
 
     @Override
     public User getById(Long id) {
-        String sqlQuery = "select user_id, email, login, name, birthday from users where user_id = ?";
+        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users WHERE user_id = ?";
 
         return jdbcTemplate.queryForObject(sqlQuery, userRowMapper, id);
     }
 
     @Override
     public Collection<User> getAll() {
-        String sqlQuery = "select user_id, email, login, name, birthday from users";
+        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users";
         return jdbcTemplate.query(sqlQuery, userRowMapper);
     }
 
