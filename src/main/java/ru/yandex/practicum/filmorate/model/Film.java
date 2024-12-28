@@ -8,7 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,19 +39,8 @@ public class Film {
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
     @Builder.Default
-    private Set<String> genres = new HashSet<>();
+    private List<String> genres = new ArrayList<>();
 
     private MpaRating mpaRating;
 
-    public int getLikesCount() {
-        return likes.size();
-    }
-
-    public void addLike(Long userId) {
-        likes.add(userId);
-    }
-
-    public void removeLike(Long userId) {
-        likes.remove(userId);
-    }
 }

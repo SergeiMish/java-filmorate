@@ -2,10 +2,12 @@ package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.mappers.UserRowMapper;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
@@ -53,13 +55,15 @@ public class UserDao implements UserStorage {
     @Override
     public User update(User user) {
         String sqlQuery = "UPDATE users SET " +
-                "email = ?, login = ?, name = ?, birthday = ?" +
+                "email = ?, login = ?, name = ?, birthday = ? " + // Добавлен пробел перед WHERE
                 "WHERE user_id = ?";
-        jdbcTemplate.update(sqlQuery
-                , user.getEmail()
-                , user.getLogin()
-                , user.getName()
-                , Timestamp.valueOf(user.getBirthday().atStartOfDay()));
+        jdbcTemplate.update(sqlQuery,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                Timestamp.valueOf(user.getBirthday().atStartOfDay()),
+                user.getId()
+        );
 
         return user;
     }
@@ -67,8 +71,11 @@ public class UserDao implements UserStorage {
     @Override
     public User getById(Long id) {
         String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users WHERE user_id = ?";
-
-        return jdbcTemplate.queryForObject(sqlQuery, userRowMapper, id);
+        try {
+            return jdbcTemplate.queryForObject(sqlQuery, userRowMapper, id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NotFoundObjectException("User not found with id: " + id);
+        }
     }
 
     @Override

@@ -15,6 +15,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -54,7 +55,7 @@ public class FilmDao implements FilmStorage {
             film.setLikes(new HashSet<>());
         }
         if (film.getGenres() == null) {
-            film.setGenres(new HashSet<>());
+            film.setGenres(new ArrayList<>());
         }
 
         log.info("Film created with ID: {}", film.getId());
