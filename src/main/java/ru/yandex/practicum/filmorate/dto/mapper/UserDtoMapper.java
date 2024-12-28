@@ -1,14 +1,15 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 
 public class UserDtoMapper {
 
-    CreateUserDtoMapper toDto (User){
+    UserDto toDto (User){
 
     }
 
-    User toModel(CreateUserDtoMapper createUserDtoMapper){
+    User toModel(UserDto userDto){
 
     }
 }
