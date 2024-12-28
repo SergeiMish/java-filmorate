@@ -5,7 +5,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 public class UserDtoMapper {
 
-    UserDto toDto (User){
+    UserDto toDto (User model){
 
     }
 
