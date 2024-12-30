@@ -4,22 +4,20 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,16 +31,24 @@ public class FilmController {
     private final FilmStorage filmStorage;
     private final FilmService filmService;
     private final ValidateFilm filmValidator;
+    private final FilmDao filmDao;
 
     @PostMapping
     public ResponseEntity<FilmDto> postFilm(@RequestBody @Valid FilmDto filmDto) {
+
         log.info("Received request to create film: {}", filmDto);
-        Film film = FilmDtoMapper.toModel(filmDto);
-        filmValidator.validateFilm(film);
-        Film createdFilm = filmStorage.create(film);
-        log.info("Film created successfully: {}", createdFilm);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
+        try {
+            Film film = FilmDtoMapper.toModel(filmDto);
+            filmValidator.validateFilm(film);
+            Film createdFilm = filmStorage.create(film);
+            log.info("Film created successfully: {}", createdFilm);
+            return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
+        } catch (IllegalArgumentException e) {
+            log.error("Error creating film: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
+
 
     @GetMapping
     public Collection<FilmDto> getFilms() {

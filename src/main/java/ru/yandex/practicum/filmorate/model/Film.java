@@ -39,8 +39,8 @@ public class Film {
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
     @Builder.Default
-    private List<String> genres = new ArrayList<>();
+    private List<Genre> genres;
 
-    private MpaRating mpaRating;
+    private Mpa mpa;
 
 }

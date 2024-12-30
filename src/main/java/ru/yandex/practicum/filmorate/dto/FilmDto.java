@@ -1,12 +1,15 @@
 package ru.yandex.practicum.filmorate.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
-import ru.yandex.practicum.filmorate.model.MpaRating;
+import lombok.NonNull;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -31,7 +34,7 @@ public class FilmDto {
     private int duration;
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
-    @Builder.Default
-    private List<String> genres = new ArrayList<>();
-    private MpaRating mpaRating;
+    private List<Genre> genres;
+
+    private Mpa mpa;
 }

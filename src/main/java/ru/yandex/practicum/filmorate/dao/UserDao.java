@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -126,4 +125,5 @@ public class UserDao implements UserStorage {
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, friendId, status.name());
         return count != null && count > 0;
     }
+
 }

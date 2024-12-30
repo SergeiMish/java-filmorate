@@ -8,17 +8,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 
 @Repository
@@ -31,13 +29,15 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film create(Film film) {
+
+
         String sqlQuery = "INSERT INTO films (name, description, release_date, duration, mpa_rating) " +
                 "VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         log.debug("Executing SQL: {}", sqlQuery);
         log.debug("With parameters: name={}, description={}, releaseDate={}, duration={}, mpaRating={}",
-                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpaRating());
+                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa());
 
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"film_id"});
@@ -45,7 +45,7 @@ public class FilmDao implements FilmStorage {
             stmt.setString(2, film.getDescription());
             stmt.setTimestamp(3, Timestamp.valueOf(film.getReleaseDate().atStartOfDay()));
             stmt.setInt(4, film.getDuration());
-            stmt.setString(5, String.valueOf(film.getMpaRating()));
+            stmt.setLong(5, film.getMpa().getId());
             return stmt;
         }, keyHolder);
 
@@ -72,12 +72,14 @@ public class FilmDao implements FilmStorage {
     @Override
     public Film update(Film film) {
         String sqlQuery = "UPDATE films SET " +
-                "name = ?, description = ?, releaseDate = ?, duration = ?" +
-                "WHERE user_id = ?";
-        jdbcTemplate.update(sqlQuery
-                , film.getName()
-                , film.getReleaseDate()
-                , film.getDuration());
+                "name = ?, description = ?, release_date = ?, duration = ? " +
+                "WHERE film_id = ?";
+        jdbcTemplate.update(sqlQuery,
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                film.getId());
 
         return film;
     }
@@ -101,6 +103,9 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "SELECT * FROM films";
         return jdbcTemplate.query(sqlQuery, filmRowMapper);
     }
-
-
+    public boolean isMpaExists(Long mpaId) {
+        String sqlQuery = "SELECT COUNT(*) FROM MpaRatings WHERE mpa_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sqlQuery, new Object[]{mpaId}, Integer.class);
+        return count != null && count > 0;
+    }
 }

@@ -15,9 +15,9 @@ public class FilmDtoMapper {
                 .description(model.getDescription())
                 .releaseDate(model.getReleaseDate())
                 .duration(model.getDuration())
-                .likes(new HashSet<>(model.getLikes()))
-                .genres(new ArrayList<>(model.getGenres()))
-                .mpaRating(model.getMpaRating())
+                .likes(model.getLikes() != null ? new HashSet<>(model.getLikes()) : new HashSet<>())
+                .genres(model.getGenres() != null ? new ArrayList<>(model.getGenres()) : new ArrayList<>())
+                .mpa(model.getMpa())
                 .build();
     }
 
@@ -28,9 +28,9 @@ public class FilmDtoMapper {
                 .description(filmDto.getDescription())
                 .releaseDate(filmDto.getReleaseDate())
                 .duration(filmDto.getDuration())
-                .likes(new HashSet<>(filmDto.getLikes()))
-                .genres(new ArrayList<>(filmDto.getGenres()))
-                .mpaRating(filmDto.getMpaRating())
+                .likes(filmDto.getLikes() != null ? new HashSet<>(filmDto.getLikes()) : new HashSet<>())
+                .genres(filmDto.getGenres() != null ? new ArrayList<>(filmDto.getGenres()) : new ArrayList<>())
+                .mpa(filmDto.getMpa())
                 .build();
     }
 }

@@ -23,23 +23,23 @@ public class UserService {
     private final UserStorage userStorage;
     private final UserDao userDao;
 
-    public User addFriend(Long id, Long friendId) {
-        getUserOrThrow(id);
-        getUserOrThrow(friendId);
-
-        if (id.equals(friendId)) {
-            throw new ValidationException("Пользователь не может добавить себя в друзья");
+    public User addFriend(Long user1Id, Long user2Id) {
+        if (Objects.equals(user1Id, user2Id)) {
+            log.error("Нельзя добавить в друзья самого себя");
+            throw new ValidationException("Нельзя добавить в друзья самого себя");
         }
 
-        userDao.addFriendship(id, friendId, FriendshipStatus.UNCONFIRMED);
+        User mainUser = userDao.getById(user1Id);
+        User friendUser = userDao.getById(user2Id);
 
-        if (userDao.isFriendshipExists(friendId, id, FriendshipStatus.UNCONFIRMED)) {
-            confirmFriendship(id, friendId);
+        if (!userDao.isFriendshipExists(user1Id, user2Id, FriendshipStatus.UNCONFIRMED)) {
+            userDao.addFriendship(user1Id, user2Id, FriendshipStatus.UNCONFIRMED);
+            log.info("Пользователь с id = {} добавил в друзья пользователя с id = {}", user1Id, user2Id);
+        } else {
+            log.info("Пользователь с id = {} уже является другом пользователя с id = {}", user1Id, user2Id);
         }
 
-        log.debug("Friendship added between user {} and user {}", id, friendId);
-
-        return getUserOrThrow(id);
+        return mainUser;
     }
 
 
