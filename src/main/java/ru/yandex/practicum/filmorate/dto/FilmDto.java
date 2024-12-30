@@ -17,28 +17,21 @@ import java.util.Set;
 @Data
 @Builder
 public class FilmDto {
-
     private long id;
-
     @NotNull(message = "Название фильма не может быть пустым")
     @NotEmpty(message = "Название фильма не может быть пустым")
     private String name;
-
     @NotNull(message = "Описание фильма не может быть пустым")
     @NotEmpty(message = "Описание фильма не может быть пустым")
     @Size(max = 200, message = "Описание фильма не может быть больше 200 символов")
     private String description;
-
     @NotNull(message = "Дата релиза не может быть null")
     private LocalDate releaseDate;
-
     @Positive(message = "Продолжительность фильма должна быть положительной")
     private int duration;
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
     @Builder.Default
     private List<String> genres = new ArrayList<>();
-
     private MpaRating mpaRating;
-
 }

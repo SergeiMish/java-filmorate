@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
@@ -19,6 +21,7 @@ import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Validated
 @RestController
@@ -32,24 +35,27 @@ public class FilmController {
     private final ValidateFilm filmValidator;
 
     @PostMapping
-    public ResponseEntity<Film> postFilm(@RequestBody @Valid Film film) {
-        log.info("Received request to create film: {}", film);
+    public ResponseEntity<FilmDto> postFilm(@RequestBody @Valid FilmDto filmDto) {
+        log.info("Received request to create film: {}", filmDto);
+        Film film = FilmDtoMapper.toModel(filmDto);
         filmValidator.validateFilm(film);
         Film createdFilm = filmStorage.create(film);
         log.info("Film created successfully: {}", createdFilm);
-        return ResponseEntity.ok(createdFilm);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
     }
 
     @GetMapping
-    public Collection<Film> getFilms() {
-        return filmStorage.getAll();
+    public Collection<FilmDto> getFilms() {
+        return filmStorage.getAll().stream()
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Film> getFilmById(@PathVariable Long id) {
+    public ResponseEntity<FilmDto> getFilmById(@PathVariable Long id) {
         try {
             Film film = filmStorage.getById(id);
-            return ResponseEntity.ok(film);
+            return ResponseEntity.ok(FilmDtoMapper.toDto(film));
         } catch (NotFoundObjectException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
@@ -58,23 +64,29 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
-        return filmService.mostPopularFilms(count);
+    public List<FilmDto> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
+        return filmService.mostPopularFilms(count).stream()
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public Film addLike(@PathVariable Long id, @PathVariable Long userId) {
-        return filmService.addLike(id, userId);
+    public ResponseEntity<FilmDto> addLike(@PathVariable Long id, @PathVariable Long userId) {
+        Film film = filmService.addLike(id, userId);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public Film deleteLike(@PathVariable Long id, @PathVariable Long userId) {
-        return filmService.removeLike(id, userId);
+    public ResponseEntity<FilmDto> deleteLike(@PathVariable Long id, @PathVariable Long userId) {
+        Film film = filmService.removeLike(id, userId);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
     }
 
     @PutMapping
-    public Film putFilm(@Valid @RequestBody Film film) {
+    public ResponseEntity<FilmDto> putFilm(@Valid @RequestBody FilmDto filmDto) {
+        Film film = FilmDtoMapper.toModel(filmDto);
         filmValidator.validateFilm(film);
-        return filmStorage.update(film);
+        Film updatedFilm = filmStorage.update(film);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(updatedFilm));
     }
 }

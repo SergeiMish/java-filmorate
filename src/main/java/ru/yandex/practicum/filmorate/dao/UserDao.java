@@ -52,18 +52,21 @@ public class UserDao implements UserStorage {
         return jdbcTemplate.update(sqlQuery, id) > 0;
     }
 
-    @Override
     public User update(User user) {
         String sqlQuery = "UPDATE users SET " +
-                "email = ?, login = ?, name = ?, birthday = ? " + // Добавлен пробел перед WHERE
+                "email = ?, login = ?, name = ?, birthday = ? " +
                 "WHERE user_id = ?";
-        jdbcTemplate.update(sqlQuery,
+        int rowsAffected = jdbcTemplate.update(sqlQuery,
                 user.getEmail(),
                 user.getLogin(),
                 user.getName(),
                 Timestamp.valueOf(user.getBirthday().atStartOfDay()),
                 user.getId()
         );
+
+        if (rowsAffected == 0) {
+            throw new NotFoundObjectException("Не найден пользователь с ID: " + user.getId());
+        }
 
         return user;
     }
@@ -80,7 +83,7 @@ public class UserDao implements UserStorage {
 
     @Override
     public Collection<User> getAll() {
-        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users";
+        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users ORDER BY user_id ASC";
         return jdbcTemplate.query(sqlQuery, userRowMapper);
     }
 
@@ -116,5 +119,11 @@ public class UserDao implements UserStorage {
     public void updateFriendshipStatus(Long userId, Long friendId, FriendshipStatus status) {
         String sqlQuery = "UPDATE friendships SET status = ? WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sqlQuery, status.name(), userId, friendId);
+    }
+
+    public boolean isFriendshipExists(Long userId, Long friendId, FriendshipStatus status) {
+        String sql = "SELECT COUNT(*) FROM friendships WHERE user_id = ? AND friend_id = ? AND status = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, friendId, status.name());
+        return count != null && count > 0;
     }
 }
