@@ -30,8 +30,9 @@ public class FilmDao implements FilmStorage {
     @Override
     public Film create(Film film) {
 
+        validateMpaExists(film.getMpa().getId());
 
-        String sqlQuery = "INSERT INTO films (name, description, release_date, duration, mpa_rating) " +
+        String sqlQuery = "INSERT INTO Films (name, description, release_date, duration, mpa_rating) " +
                 "VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -65,13 +66,13 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public boolean delete(Long id) {
-        String sqlQuery = "DELETE FROM films WHERE user_id = ?";
+        String sqlQuery = "DELETE FROM Films WHERE film_id = ?";
         return jdbcTemplate.update(sqlQuery, id) > 0;
     }
 
     @Override
     public Film update(Film film) {
-        String sqlQuery = "UPDATE films SET " +
+        String sqlQuery = "UPDATE Films SET " +
                 "name = ?, description = ?, release_date = ?, duration = ? " +
                 "WHERE film_id = ?";
         jdbcTemplate.update(sqlQuery,
@@ -86,7 +87,7 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film getById(Long id) {
-        String sqlQuery = "SELECT film_id, name, description, release_date, duration, mpa_rating FROM films WHERE film_id = ?";
+        String sqlQuery = "SELECT film_id, name, description, release_date, duration, mpa_id FROM Films WHERE film_id = ?";
         try {
             return jdbcTemplate.queryForObject(sqlQuery, filmRowMapper, id);
         } catch (EmptyResultDataAccessException e) {
@@ -100,12 +101,18 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Collection<Film> getAll() {
-        String sqlQuery = "SELECT * FROM films";
+        String sqlQuery = "SELECT * FROM Films";
         return jdbcTemplate.query(sqlQuery, filmRowMapper);
     }
-    public boolean isMpaExists(Long mpaId) {
-        String sqlQuery = "SELECT COUNT(*) FROM MpaRatings WHERE mpa_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sqlQuery, new Object[]{mpaId}, Integer.class);
-        return count != null && count > 0;
+
+    public void validateMpaExists(Long mpaId) {
+        log.info("Проверка существования mpa_id = {} в таблице MpaRatings", mpaId);
+        final String sqlQueryMpa = "SELECT COUNT(*) FROM MpaRatings WHERE mpa_id = ?";
+
+        Integer count = jdbcTemplate.queryForObject(sqlQueryMpa, Integer.class, mpaId);
+
+        if (count == null || count == 0) {
+            throw new ValidationException("MPA id не существует");
+        }
     }
 }

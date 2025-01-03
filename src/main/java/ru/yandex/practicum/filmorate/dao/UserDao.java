@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.mappers.UserRowMapper;
-import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
@@ -104,26 +103,39 @@ public class UserDao implements UserStorage {
     }
 
     @Override
-    public void addFriendship(Long userId, Long friendId, FriendshipStatus status) {
-        String sqlQuery = "INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sqlQuery, userId, friendId, status.name());
+    public Set<Long> getFriends(Long userId) {
+        String sqlQuery = "SELECT user2_id FROM friendships WHERE user1_id = ?";
+        List<Long> friendIds = jdbcTemplate.queryForList(sqlQuery, Long.class, userId);
+        return new HashSet<>(friendIds);
     }
 
-    @Override
-    public void removeFriendship(Long userId, Long friendId) {
-        String sqlQuery = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sqlQuery, userId, friendId);
+    public void addFriend(Long user1Id, Long user2Id) {
+        String sqlQueryAddFriend = "INSERT INTO friendships(user1_id, user2_id) VALUES (?, ?)";
+        jdbcTemplate.update(sqlQueryAddFriend, user1Id, user2Id);
     }
 
-    public void updateFriendshipStatus(Long userId, Long friendId, FriendshipStatus status) {
-        String sqlQuery = "UPDATE friendships SET status = ? WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sqlQuery, status.name(), userId, friendId);
+    public void removeFriend(Long user1Id, Long user2Id) {
+        String sqlQuery = "DELETE FROM friendships WHERE user1_id = ? AND user2_id = ?";
+        jdbcTemplate.update(sqlQuery, user1Id, user2Id);
     }
 
-    public boolean isFriendshipExists(Long userId, Long friendId, FriendshipStatus status) {
-        String sql = "SELECT COUNT(*) FROM friendships WHERE user_id = ? AND friend_id = ? AND status = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, friendId, status.name());
+    public List<Long> getFriendIds(Long userId) {
+        String sqlQueryUser2 = "SELECT user2_id FROM friendships WHERE user1_id = ?";
+        return jdbcTemplate.queryForList(sqlQueryUser2, Long.class, userId);
+    }
+
+    public List<User> getCommonFriends(Long firstUserId, Long secondUserId, UserRowMapper userRowMapper) {
+        String sqlCommonFriends = "SELECT u.user_id, u.email, u.login, u.name, u.birthday FROM users u " +
+                "JOIN friendships f1 ON u.user_id = f1.user2_id " +
+                "JOIN friendships f2 ON u.user_id = f2.user2_id " +
+                "WHERE f1.user1_id = ? AND f2.user1_id = ?";
+        return jdbcTemplate.query(sqlCommonFriends, userRowMapper, firstUserId, secondUserId);
+    }
+
+
+    public boolean isFriendshipExists(Long user1Id, Long user2Id) {
+        String sqlQuery = "SELECT COUNT(*) FROM friendships WHERE user1_id = ? AND user2_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, user1Id, user2Id);
         return count != null && count > 0;
     }
-
 }

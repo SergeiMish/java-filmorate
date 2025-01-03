@@ -8,26 +8,26 @@ CREATE TABLE IF NOT EXISTS Users
 );
 
 CREATE TABLE IF NOT EXISTS Friendships (
-                             user_id BIGINT,
-                             friend_id BIGINT,
-                             status VARCHAR(20) NOT NULL,
-                             PRIMARY KEY (user_id, friend_id),
-                             FOREIGN KEY (user_id) REFERENCES Users(user_id),
-                             FOREIGN KEY (friend_id) REFERENCES Users(user_id)
-);
-
-CREATE TABLE IF NOT EXISTS Films (
-                       film_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                       name VARCHAR(255) NOT NULL,
-                       description VARCHAR(200) NOT NULL,
-                       release_date DATE NOT NULL,
-                       duration INT NOT NULL,
-                       mpa_rating VARCHAR(10) NOT NULL
+                      user1_id BIGINT NOT NULL,
+                      user2_id BIGINT NOT NULL,
+                      PRIMARY KEY (user1_id, user2_id),
+                      FOREIGN KEY (user1_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+                      FOREIGN KEY (user2_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS MpaRatings (
                                           mpa_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                          name VARCHAR(10) NOT NULL UNIQUE
+                                          name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS Films (
+                                     film_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                     name VARCHAR(255) NOT NULL,
+                                     description VARCHAR(200) NOT NULL,
+                                     release_date DATE NOT NULL,
+                                     duration INT NOT NULL,
+                                     mpa_id BIGINT,
+                                     FOREIGN KEY (mpa_id) REFERENCES MpaRatings(mpa_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Genres (

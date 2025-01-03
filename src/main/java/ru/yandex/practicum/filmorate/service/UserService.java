@@ -7,10 +7,9 @@ import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
-import ru.yandex.practicum.filmorate.model.Friendship;
-import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
-    private final UserDao userDao;
+
 
     public User addFriend(Long user1Id, Long user2Id) {
         if (Objects.equals(user1Id, user2Id)) {
@@ -29,11 +28,11 @@ public class UserService {
             throw new ValidationException("Нельзя добавить в друзья самого себя");
         }
 
-        User mainUser = userDao.getById(user1Id);
-        User friendUser = userDao.getById(user2Id);
+        User mainUser = getUserOrThrow(user1Id);
+        User friendUser = getUserOrThrow(user2Id);
 
-        if (!userDao.isFriendshipExists(user1Id, user2Id, FriendshipStatus.UNCONFIRMED)) {
-            userDao.addFriendship(user1Id, user2Id, FriendshipStatus.UNCONFIRMED);
+        if (!userStorage.isFriendshipExists(user1Id, user2Id)) {
+            userStorage.addFriend(user1Id, user2Id);
             log.info("Пользователь с id = {} добавил в друзья пользователя с id = {}", user1Id, user2Id);
         } else {
             log.info("Пользователь с id = {} уже является другом пользователя с id = {}", user1Id, user2Id);
@@ -42,25 +41,15 @@ public class UserService {
         return mainUser;
     }
 
-
     public User removeFriend(Long id, Long friendId) {
         getUserOrThrow(id);
         getUserOrThrow(friendId);
 
-        userStorage.removeFriendship(id, friendId);
-        userStorage.removeFriendship(friendId, id);
+        userStorage.removeFriend(id, friendId);
+
+        log.info("Пользователь с id = {} удалил из друзей пользователя с id = {}", id, friendId);
 
         return getUserOrThrow(id);
-    }
-
-    public void confirmFriendship(Long userId, Long friendId) {
-        getUserOrThrow(userId);
-        getUserOrThrow(friendId);
-
-        userDao.updateFriendshipStatus(userId, friendId, FriendshipStatus.CONFIRMED);
-        userDao.updateFriendshipStatus(friendId, userId, FriendshipStatus.CONFIRMED);
-
-        log.debug("Friendship confirmed between user {} and user {}", userId, friendId);
     }
 
     public User getUserOrThrow(Long id) {
@@ -72,13 +61,10 @@ public class UserService {
     }
 
     public Set<User> listFriends(Long id) {
-        User user = userStorage.getById(id);
-        if (user == null) {
-            throw new NotFoundObjectException("Объект не найден");
-        }
+        getUserOrThrow(id);
 
-        Set<User> friends = user.getFriends().stream()
-                .map(Friendship::getUserId)
+        List<Long> friendIds = userStorage.getFriendIds(id);
+        Set<User> friends = friendIds.stream()
                 .map(userStorage::getById)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -88,27 +74,19 @@ public class UserService {
     }
 
     public Set<User> getCommonFriends(Long userId, Long otherUserId) {
-        User user = userStorage.getById(userId);
-        User otherUser = userStorage.getById(otherUserId);
+        getUserOrThrow(userId);
+        getUserOrThrow(otherUserId);
 
-        if (user == null || otherUser == null) {
-            throw new NotFoundObjectException("Объект не найден");
-        }
+        List<Long> userFriendIds = userStorage.getFriendIds(userId);
+        List<Long> otherUserFriendIds = userStorage.getFriendIds(otherUserId);
 
-        Set<Long> userConfirmedFriends = user.getFriends().stream()
-                .filter(friendship -> friendship.getStatus() == FriendshipStatus.CONFIRMED)
-                .map(Friendship::getUserId)
+        Set<Long> commonFriendIds = userFriendIds.stream()
+                .filter(otherUserFriendIds::contains)
                 .collect(Collectors.toSet());
 
-        Set<Long> otherUserConfirmedFriends = otherUser.getFriends().stream()
-                .filter(friendship -> friendship.getStatus() == FriendshipStatus.CONFIRMED)
-                .map(Friendship::getUserId)
+        return commonFriendIds.stream()
+                .map(userStorage::getById)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
-        Set<Long> commonFriendIds = userConfirmedFriends.stream()
-                .filter(otherUserConfirmedFriends::contains)
-                .collect(Collectors.toSet());
-
-        return userStorage.findByIds(commonFriendIds);
     }
 }

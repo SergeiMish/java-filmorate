@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.dto;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
-import ru.yandex.practicum.filmorate.model.Friendship;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -12,7 +11,7 @@ import java.util.Set;
 @Builder
 public class UserDto {
 
-    private final Set<Friendship> friends = new HashSet<>();
+
     private long id;
 
     @Email(message = "Некорректный email")

@@ -11,7 +11,7 @@ import java.util.Set;
 @Data
 @Builder
 public class User {
-    private final Set<Friendship> friends = new HashSet<>();
+
     private long id;
     @Email(message = "Некорректный email")
     @NotBlank(message = "Email не может быть пустым")

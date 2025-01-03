@@ -1,9 +1,9 @@
 package ru.yandex.practicum.filmorate.interfaces;
 
-import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public interface UserStorage {
@@ -20,9 +20,13 @@ public interface UserStorage {
 
     Set<User> findByIds(Set<Long> ids);
 
-    void addFriendship(Long userId, Long friendId, FriendshipStatus status);
+    Set<Long> getFriends(Long userId);
 
-    void removeFriendship(Long userId, Long friendId);
+    void removeFriend(Long id, Long friendId);
 
-    void updateFriendshipStatus(Long userId, Long friendId, FriendshipStatus confirmed);
+    void addFriend(Long user1Id, Long user2Id);
+
+    boolean isFriendshipExists(Long user1Id, Long user2Id);
+
+    List<Long> getFriendIds(Long id);
 }

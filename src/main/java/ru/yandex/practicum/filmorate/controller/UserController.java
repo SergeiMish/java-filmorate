@@ -95,10 +95,4 @@ public class UserController {
         User updatedUser = userStorage.update(user);
         return ResponseEntity.ok(UserDtoMapper.toDto(updatedUser));
     }
-
-    @PutMapping("/{id}/friends/{friendId}/confirm")
-    public ResponseEntity<Void> confirmFriend(@PathVariable Long id, @PathVariable Long friendId) {
-        userService.confirmFriendship(id, friendId);
-        return ResponseEntity.ok().build();
-    }
 }
