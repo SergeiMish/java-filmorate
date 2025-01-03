@@ -1,59 +1,84 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    @NotNull
-    private final Map<Long, Film> films = new HashMap<>();
-    private final LocalDate localDateMin = LocalDate.of(1895, 12, 28);
+
+    private final FilmStorage filmStorage;
+    private final FilmService filmService;
+    private final ValidateFilm filmValidator;
+
+    @Autowired
+    public FilmController(FilmStorage filmStorage, FilmService filmService, ValidateFilm filmValidator) {
+        this.filmStorage = filmStorage;
+        this.filmService = filmService;
+        this.filmValidator = filmValidator;
+    }
 
 
     @PostMapping
-    public Film postFilm(@Valid @RequestBody Film film) {
-        if (film.getReleaseDate().isBefore(localDateMin) || film.getReleaseDate().isEqual(localDateMin)) {
-            throw new ValidationException("Дата релиза должна быть не раньше 28 декабря 1895 года");
-        }
-        film.setId(getNextId());
-        films.put(film.getId(), film);
-        return film;
-
+    public Film postFilm(@RequestBody @Valid Film film) {
+//        if (film.getName() == null || film.getName().isEmpty()) {
+//            throw new ValidationException("Название фильма не может быть пустым");
+//        }
+//
+//        if (film.getDescription() == null || film.getDescription().isEmpty()) {
+//            throw new ValidationException("Описание фильма не может быть пустым");
+//        }
+//
+//        if (film.getDescription().length() > 200) {
+//            throw new ValidationException("Описание фильма не может быть больше 200 символов");
+//        }
+//
+//        if (film.getDuration() <= 0) {
+//            throw new ValidationException("Продолжительность фильма должна быть положительной");
+//        }
+        filmValidator.validateFilm(film);
+        return filmStorage.create(film);
     }
 
     @GetMapping
     public Collection<Film> getFilms() {
-        return films.values();
+        return filmStorage.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable Long id) {
+        return filmStorage.getById(id);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
+        return filmService.mostPopularFilms(count);
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public Film addLike(@PathVariable Long id, @PathVariable Long userId) {
+        return filmService.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public Film deleteLike(@PathVariable Long id, @PathVariable Long userId) {
+        return filmService.removeLike(id, userId);
     }
 
     @PutMapping
     public Film putFilm(@Valid @RequestBody Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new ValidationException("Фильм с таким ID не найден");
-        }
-        if (film.getReleaseDate().isBefore(localDateMin)) {
-            throw new ValidationException("Дата релиза должна быть не раньше 28 декабря 1895 года");
-        }
-        films.put(film.getId(), film);
-        return film;
+        filmValidator.validateFilm(film);
+        return filmStorage.update(film);
     }
-
-    private long getNextId() {
-        long currentMaxId = films.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
-    }
-
 }
