@@ -19,17 +19,17 @@ public class MpaDao {
         String sql = "SELECT * FROM MpaRatings";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Mpa mpa = new Mpa();
-            mpa.setId(rs.getLong("id"));
+            mpa.setId(rs.getLong("mpa_id"));
             mpa.setName(rs.getString("name"));
             return mpa;
         });
     }
 
     public Mpa getMpaRatingById(Long id) {
-        String sql = "SELECT * FROM MpaRatings WHERE id = ?";
+        String sql = "SELECT * FROM MpaRatings WHERE mpa_id = ?";
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
             Mpa mpa = new Mpa();
-            mpa.setId(rs.getLong("id"));
+            mpa.setId(rs.getLong("mpa_id"));
             mpa.setName(rs.getString("name"));
             return mpa;
         }, id);

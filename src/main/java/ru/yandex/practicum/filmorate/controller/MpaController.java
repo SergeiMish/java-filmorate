@@ -6,10 +6,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.dao.MpaDao;
+import ru.yandex.practicum.filmorate.dto.MpaDto;
+import ru.yandex.practicum.filmorate.dto.mapper.MpaDtoMapper;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/mpa")
@@ -18,12 +21,15 @@ public class MpaController {
     private final MpaDao mpaDao;
 
     @GetMapping
-    public List<Mpa> getAllMpaRatings() {
-        return mpaDao.getAllMpaRatings();
+    public List<MpaDto> getAllMpaRatings() {
+        return mpaDao.getAllMpaRatings().stream()
+                .map(MpaDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Mpa getMpaRatingById(@PathVariable Long id) {
-        return mpaDao.getMpaRatingById(id);
+    public MpaDto getMpaRatingById(@PathVariable Long id) {
+        Mpa mpa = mpaDao.getMpaRatingById(id);
+        return MpaDtoMapper.toDto(mpa);
     }
 }

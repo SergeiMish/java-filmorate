@@ -16,13 +16,14 @@ public class FilmRowMapper implements RowMapper<Film> {
     public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
         Mpa mpa = new Mpa();
         mpa.setId(rs.getLong("mpa_id"));
-        mpa.setName(rs.getString("mpa_name"));
+        mpa.setName(rs.getString("mpa_name")); // Используйте псевдоним из запроса
 
-        return Film.builder().id(rs.getLong(1))
-                .name(rs.getString(2))
-                .description(rs.getString(3))
-                .releaseDate(rs.getTimestamp(4).toLocalDateTime().toLocalDate())
-                .duration(rs.getInt(5))
+        return Film.builder()
+                .id(rs.getLong("film_id"))
+                .name(rs.getString("name"))
+                .description(rs.getString("description"))
+                .releaseDate(rs.getDate("release_date").toLocalDate())
+                .duration(rs.getInt("duration"))
                 .mpa(mpa)
                 .likes(new HashSet<>())
                 .genres(new ArrayList<>())

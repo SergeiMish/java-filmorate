@@ -27,6 +27,7 @@ public class FilmService {
         Film film = filmDao.getById(filmId);
         userService.getUserOrThrow(userId);
         film.getLikes().add(userId);
+        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId); // Обновление filmLikes
         filmDao.update(film);
         return film;
     }
@@ -35,9 +36,12 @@ public class FilmService {
         Film film = getFilmOrThrow(filmId);
         userService.getUserOrThrow(userId);
 
-        Set<Long> likes =  filmLikes.get(filmId);
+        Set<Long> likes = filmLikes.get(filmId);
         if (likes != null) {
             likes.remove(userId);
+            if (likes.isEmpty()) {
+                filmLikes.remove(filmId);
+            }
             filmStorage.update(film);
             logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
         }

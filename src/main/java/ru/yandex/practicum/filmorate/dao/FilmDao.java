@@ -8,10 +8,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.PreparedStatement;
@@ -29,16 +31,21 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film create(Film film) {
-
         validateMpaExists(film.getMpa().getId());
 
-        String sqlQuery = "INSERT INTO Films (name, description, release_date, duration, mpa_rating) " +
+        if (film.getGenres() != null) {
+            for (Genre genre : film.getGenres()) {
+                validateGenreExists(genre.getId());
+            }
+        }
+
+        String sqlQuery = "INSERT INTO Films (name, description, release_date, duration, mpa_id) " +
                 "VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         log.debug("Executing SQL: {}", sqlQuery);
-        log.debug("With parameters: name={}, description={}, releaseDate={}, duration={}, mpaRating={}",
-                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa());
+        log.debug("With parameters: name={}, description={}, releaseDate={}, duration={}, mpaId={}",
+                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa().getId());
 
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"film_id"});
@@ -72,14 +79,24 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film update(Film film) {
+
+        if (!filmExists(film.getId())) {
+            throw new NotFoundObjectException("Фильм с ID " + film.getId() + " не найден");
+        }
+
+        Long mpaId = Optional.ofNullable(film.getMpa())
+                .map(Mpa::getId)
+                .orElse(null);
+
         String sqlQuery = "UPDATE Films SET " +
-                "name = ?, description = ?, release_date = ?, duration = ? " +
+                "name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? " +
                 "WHERE film_id = ?";
         jdbcTemplate.update(sqlQuery,
                 film.getName(),
                 film.getDescription(),
                 film.getReleaseDate(),
                 film.getDuration(),
+                mpaId,
                 film.getId());
 
         return film;
@@ -87,7 +104,10 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film getById(Long id) {
-        String sqlQuery = "SELECT film_id, name, description, release_date, duration, mpa_id FROM Films WHERE film_id = ?";
+        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+                "FROM Films f " +
+                "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
+                "WHERE f.film_id = ?";
         try {
             return jdbcTemplate.queryForObject(sqlQuery, filmRowMapper, id);
         } catch (EmptyResultDataAccessException e) {
@@ -101,18 +121,36 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Collection<Film> getAll() {
-        String sqlQuery = "SELECT * FROM Films";
+        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+                "FROM Films f " +
+                "JOIN MpaRatings m ON f.mpa_id = m.mpa_id";
         return jdbcTemplate.query(sqlQuery, filmRowMapper);
     }
-
     public void validateMpaExists(Long mpaId) {
         log.info("Проверка существования mpa_id = {} в таблице MpaRatings", mpaId);
         final String sqlQueryMpa = "SELECT COUNT(*) FROM MpaRatings WHERE mpa_id = ?";
 
         Integer count = jdbcTemplate.queryForObject(sqlQueryMpa, Integer.class, mpaId);
 
-        if (count == null || count == 0) {
-            throw new ValidationException("MPA id не существует");
-        }
+        Optional.ofNullable(count)
+                .filter(c -> c > 0)
+                .orElseThrow(() -> new ValidationException("MPA id не существует"));
+    }
+
+    public void validateGenreExists(Long genreId) {
+        log.info("Проверка существования genre_id = {} в таблице Genres", genreId);
+        final String sqlQueryGenre = "SELECT COUNT(*) FROM Genres WHERE genre_id = ?";
+
+        Integer count = jdbcTemplate.queryForObject(sqlQueryGenre, Integer.class, genreId);
+
+        Optional.ofNullable(count)
+                .filter(c -> c > 0)
+                .orElseThrow(() -> new ValidationException("Genre id не существует"));
+    }
+
+    private boolean filmExists(Long filmId) {
+        String sqlQuery = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, filmId);
+        return count != null && count > 0;
     }
 }
