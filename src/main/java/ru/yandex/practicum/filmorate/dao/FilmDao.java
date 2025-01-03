@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
+import ru.yandex.practicum.filmorate.mappers.GenreRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -28,6 +29,7 @@ public class FilmDao implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
+    private final GenreRowMapper genreRowMapper;
 
     @Override
     public Film create(Film film) {
@@ -58,6 +60,15 @@ public class FilmDao implements FilmStorage {
         }, keyHolder);
 
         film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+
+        String checkExistenceSql = "SELECT COUNT(*) FROM FilmGenres WHERE film_id = ? AND genre_id = ?";
+        String insertGenresSql = "INSERT INTO FilmGenres (film_id, genre_id) VALUES (?, ?)";
+        for (Genre genre : film.getGenres()) {
+            int count = jdbcTemplate.queryForObject(checkExistenceSql, new Object[]{film.getId(), genre.getId()}, Integer.class);
+            if (count == 0) {
+                jdbcTemplate.update(insertGenresSql, film.getId(), genre.getId());
+            }
+        }
 
         if (film.getLikes() == null) {
             film.setLikes(new HashSet<>());
@@ -104,12 +115,46 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film getById(Long id) {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name, " +
+                "g.genre_id, g.name AS genre_name " +
                 "FROM Films f " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN FilmGenres fg ON f.film_id = fg.film_id " +
+                "LEFT JOIN Genres g ON fg.genre_id = g.genre_id " +
                 "WHERE f.film_id = ?";
+
         try {
-            return jdbcTemplate.queryForObject(sqlQuery, filmRowMapper, id);
+            return jdbcTemplate.query(sqlQuery, rs -> {
+                Film film = null;
+                List<Genre> genres = new ArrayList<>();
+                while (rs.next()) {
+                    if (film == null) {
+                        Mpa mpa = new Mpa();
+                        mpa.setId(rs.getLong("mpa_id"));
+                        mpa.setName(rs.getString("mpa_name"));
+
+                        film = Film.builder()
+                                .id(rs.getLong("film_id"))
+                                .name(rs.getString("name"))
+                                .description(rs.getString("description"))
+                                .releaseDate(rs.getDate("release_date").toLocalDate())
+                                .duration(rs.getInt("duration"))
+                                .mpa(mpa)
+                                .likes(new HashSet<>())
+                                .genres(genres)
+                                .build();
+                    }
+                    Long genreId = rs.getLong("genre_id");
+                    if (genreId != null && genreId > 0) {
+                        Genre genre = Genre.builder()
+                                .id(genreId)
+                                .name(rs.getString("genre_name"))
+                                .build();
+                        genres.add(genre);
+                    }
+                }
+                return film;
+            }, id);
         } catch (EmptyResultDataAccessException e) {
             log.error("Film with ID {} not found", id);
             throw new RuntimeException("Фильм с ID " + id + " не найден.");
@@ -123,9 +168,11 @@ public class FilmDao implements FilmStorage {
     public Collection<Film> getAll() {
         String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
                 "FROM Films f " +
-                "JOIN MpaRatings m ON f.mpa_id = m.mpa_id";
+                "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
+                "ORDER BY f.film_id";
         return jdbcTemplate.query(sqlQuery, filmRowMapper);
     }
+
     public void validateMpaExists(Long mpaId) {
         log.info("Проверка существования mpa_id = {} в таблице MpaRatings", mpaId);
         final String sqlQueryMpa = "SELECT COUNT(*) FROM MpaRatings WHERE mpa_id = ?";

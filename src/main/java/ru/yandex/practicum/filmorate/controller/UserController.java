@@ -40,6 +40,7 @@ public class UserController {
                 .map(UserDtoMapper::toDto)
                 .collect(Collectors.toList());
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         boolean isDeleted = userStorage.delete(id);

@@ -13,8 +13,9 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 
 @Repository
@@ -85,30 +86,6 @@ public class UserDao implements UserStorage {
         return jdbcTemplate.query(sqlQuery, userRowMapper);
     }
 
-    @Override
-    public Set<User> findByIds(Set<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return Collections.emptySet();
-        }
-
-        String placeholders = ids.stream()
-                .map(id -> "?")
-                .collect(Collectors.joining(", "));
-
-        String sqlQuery = String.format("SELECT user_id, email, login, name, birthday FROM users WHERE user_id IN (%s)", placeholders);
-
-        List<User> users = jdbcTemplate.query(sqlQuery, userRowMapper, ids.toArray());
-
-        return new HashSet<>(users);
-    }
-
-    @Override
-    public Set<Long> getFriends(Long userId) {
-        String sqlQuery = "SELECT user2_id FROM friendships WHERE user1_id = ?";
-        List<Long> friendIds = jdbcTemplate.queryForList(sqlQuery, Long.class, userId);
-        return new HashSet<>(friendIds);
-    }
-
     public void addFriend(Long user1Id, Long user2Id) {
         String sqlQueryAddFriend = "INSERT INTO friendships(user1_id, user2_id) VALUES (?, ?)";
         jdbcTemplate.update(sqlQueryAddFriend, user1Id, user2Id);
@@ -123,15 +100,6 @@ public class UserDao implements UserStorage {
         String sqlQueryUser2 = "SELECT user2_id FROM friendships WHERE user1_id = ?";
         return jdbcTemplate.queryForList(sqlQueryUser2, Long.class, userId);
     }
-
-    public List<User> getCommonFriends(Long firstUserId, Long secondUserId, UserRowMapper userRowMapper) {
-        String sqlCommonFriends = "SELECT u.user_id, u.email, u.login, u.name, u.birthday FROM users u " +
-                "JOIN friendships f1 ON u.user_id = f1.user2_id " +
-                "JOIN friendships f2 ON u.user_id = f2.user2_id " +
-                "WHERE f1.user1_id = ? AND f2.user1_id = ?";
-        return jdbcTemplate.query(sqlCommonFriends, userRowMapper, firstUserId, secondUserId);
-    }
-
 
     public boolean isFriendshipExists(Long user1Id, Long user2Id) {
         String sqlQuery = "SELECT COUNT(*) FROM friendships WHERE user1_id = ? AND user2_id = ?";

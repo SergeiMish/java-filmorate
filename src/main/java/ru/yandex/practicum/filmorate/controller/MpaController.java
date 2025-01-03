@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,7 +10,6 @@ import ru.yandex.practicum.filmorate.dao.MpaDao;
 import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.dto.mapper.MpaDtoMapper;
 import ru.yandex.practicum.filmorate.model.Mpa;
-
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,8 +28,9 @@ public class MpaController {
     }
 
     @GetMapping("/{id}")
-    public MpaDto getMpaRatingById(@PathVariable Long id) {
+    public ResponseEntity<MpaDto> getMpaRatingById(@PathVariable Long id) {
         Mpa mpa = mpaDao.getMpaRatingById(id);
-        return MpaDtoMapper.toDto(mpa);
+        MpaDto mpaDto = MpaDtoMapper.toDto(mpa);
+        return ResponseEntity.ok(mpaDto);
     }
 }

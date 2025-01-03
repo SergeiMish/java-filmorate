@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -16,19 +15,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
 
+    private static final Logger logger = LoggerFactory.getLogger(FilmService.class);
     private final FilmStorage filmStorage;
     private final UserService userService;
-    private final FilmDao filmDao;
-
     private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
-    private static final Logger logger = LoggerFactory.getLogger(FilmService.class);
 
     public Film addLike(Long filmId, Long userId) {
-        Film film = filmDao.getById(filmId);
+        Film film = filmStorage.getById(filmId);
         userService.getUserOrThrow(userId);
         film.getLikes().add(userId);
-        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId); // Обновление filmLikes
-        filmDao.update(film);
+        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
+        filmStorage.update(film);
         return film;
     }
 

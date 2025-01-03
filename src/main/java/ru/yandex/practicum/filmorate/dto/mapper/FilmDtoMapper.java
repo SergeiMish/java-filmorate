@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 public class FilmDtoMapper {
 
@@ -16,7 +17,9 @@ public class FilmDtoMapper {
                 .releaseDate(model.getReleaseDate())
                 .duration(model.getDuration())
                 .likes(model.getLikes() != null ? new HashSet<>(model.getLikes()) : new HashSet<>())
-                .genres(model.getGenres() != null ? new ArrayList<>(model.getGenres()) : new ArrayList<>())
+                .genres(model.getGenres() != null ? model.getGenres().stream()
+                        .map(GenreDtoMapper::toDto)
+                        .collect(Collectors.toList()) : new ArrayList<>())
                 .mpa(model.getMpa())
                 .build();
     }
@@ -29,7 +32,9 @@ public class FilmDtoMapper {
                 .releaseDate(filmDto.getReleaseDate())
                 .duration(filmDto.getDuration())
                 .likes(filmDto.getLikes() != null ? new HashSet<>(filmDto.getLikes()) : new HashSet<>())
-                .genres(filmDto.getGenres() != null ? new ArrayList<>(filmDto.getGenres()) : new ArrayList<>())
+                .genres(filmDto.getGenres() != null ? filmDto.getGenres().stream()
+                        .map(GenreDtoMapper::toModel)
+                        .collect(Collectors.toList()) : new ArrayList<>())
                 .mpa(filmDto.getMpa())
                 .build();
     }

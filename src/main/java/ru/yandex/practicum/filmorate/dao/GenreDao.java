@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.dao;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.mappers.GenreRowMapper;
 import ru.yandex.practicum.filmorate.model.Genre;
 
@@ -18,12 +19,16 @@ public class GenreDao {
     }
 
     public List<Genre> getAllGenres() {
-        String sql = "SELECT genre_id, name FROM Genres";
+        String sql = "SELECT genre_id, name FROM Genres ORDER BY genre_id";
         return jdbcTemplate.query(sql, genreRowMapper);
     }
 
     public Genre getGenreById(Long id) {
         String sql = "SELECT genre_id, name FROM Genres WHERE genre_id = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{id}, genreRowMapper);
+        List<Genre> genres = jdbcTemplate.query(sql, new Object[]{id}, genreRowMapper);
+        if (genres.isEmpty()) {
+            throw new NotFoundObjectException("Не найден жанр с ID : " + id);
+        }
+        return genres.get(0);
     }
 }

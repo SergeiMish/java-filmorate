@@ -4,7 +4,6 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public interface UserStorage {
 
@@ -17,10 +16,6 @@ public interface UserStorage {
     User getById(Long id);
 
     Collection<User> getAll();
-
-    Set<User> findByIds(Set<Long> ids);
-
-    Set<Long> getFriends(Long userId);
 
     void removeFriend(Long id, Long friendId);
 
