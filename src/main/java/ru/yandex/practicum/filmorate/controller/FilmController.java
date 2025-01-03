@@ -2,9 +2,16 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
@@ -12,73 +19,80 @@ import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Validated
 @RestController
+@Slf4j
+@RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
 
     private final FilmStorage filmStorage;
     private final FilmService filmService;
     private final ValidateFilm filmValidator;
-
-    @Autowired
-    public FilmController(FilmStorage filmStorage, FilmService filmService, ValidateFilm filmValidator) {
-        this.filmStorage = filmStorage;
-        this.filmService = filmService;
-        this.filmValidator = filmValidator;
-    }
-
+    private final FilmDao filmDao;
 
     @PostMapping
-    public Film postFilm(@RequestBody @Valid Film film) {
-//        if (film.getName() == null || film.getName().isEmpty()) {
-//            throw new ValidationException("Название фильма не может быть пустым");
-//        }
-//
-//        if (film.getDescription() == null || film.getDescription().isEmpty()) {
-//            throw new ValidationException("Описание фильма не может быть пустым");
-//        }
-//
-//        if (film.getDescription().length() > 200) {
-//            throw new ValidationException("Описание фильма не может быть больше 200 символов");
-//        }
-//
-//        if (film.getDuration() <= 0) {
-//            throw new ValidationException("Продолжительность фильма должна быть положительной");
-//        }
-        filmValidator.validateFilm(film);
-        return filmStorage.create(film);
+    public ResponseEntity<FilmDto> postFilm(@RequestBody @Valid FilmDto filmDto) {
+
+        log.info("Received request to create film: {}", filmDto);
+        try {
+            Film film = FilmDtoMapper.toModel(filmDto);
+            filmValidator.validateFilm(film);
+            Film createdFilm = filmStorage.create(film);
+            log.info("Film created successfully: {}", createdFilm);
+            return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
+        } catch (IllegalArgumentException e) {
+            log.error("Error creating film: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
+
     @GetMapping
-    public Collection<Film> getFilms() {
-        return filmStorage.getAll();
+    public Collection<FilmDto> getFilms() {
+        return filmStorage.getAll().stream()
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable Long id) {
-        return filmStorage.getById(id);
+    public ResponseEntity<FilmDto> getFilmById(@PathVariable Long id) {
+        try {
+            Film film = filmStorage.getById(id);
+            return ResponseEntity.ok(FilmDtoMapper.toDto(film));
+        } catch (NotFoundObjectException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
-        return filmService.mostPopularFilms(count);
+    public List<FilmDto> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
+        return filmService.mostPopularFilms(count).stream()
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public Film addLike(@PathVariable Long id, @PathVariable Long userId) {
-        return filmService.addLike(id, userId);
+    public ResponseEntity<FilmDto> addLike(@PathVariable Long id, @PathVariable Long userId) {
+        Film film = filmService.addLike(id, userId);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public Film deleteLike(@PathVariable Long id, @PathVariable Long userId) {
-        return filmService.removeLike(id, userId);
+    public ResponseEntity<FilmDto> deleteLike(@PathVariable Long id, @PathVariable Long userId) {
+        Film film = filmService.removeLike(id, userId);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
     }
 
     @PutMapping
-    public Film putFilm(@Valid @RequestBody Film film) {
+    public ResponseEntity<FilmDto> putFilm(@Valid @RequestBody FilmDto filmDto) {
+        Film film = FilmDtoMapper.toModel(filmDto);
         filmValidator.validateFilm(film);
-        return filmStorage.update(film);
+        Film updatedFilm = filmStorage.update(film);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(updatedFilm));
     }
 }

@@ -4,16 +4,19 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Film.
  */
 @Data
+@Builder
 public class Film {
 
     private long id;
@@ -34,16 +37,7 @@ public class Film {
     private int duration;
 
     private Set<Long> likes = new HashSet<>();
+    private List<Genre> genres;
 
-    public int getLikesCount() {
-        return likes.size();
-    }
-
-    public void addLike(Long userId) {
-        likes.add(userId);
-    }
-
-    public void removeLike(Long userId) {
-        likes.remove(userId);
-    }
+    private Mpa mpa;
 }
