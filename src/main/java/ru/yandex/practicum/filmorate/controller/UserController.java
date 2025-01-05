@@ -28,9 +28,7 @@ public class UserController {
     @PostMapping
     public UserDto postUser(@RequestBody @Valid UserDto userDto) {
         User user = UserDtoMapper.toModel(userDto);
-
         User createdUser = userStorage.create(user);
-
         return UserDtoMapper.toDto(createdUser);
     }
 
@@ -44,21 +42,13 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         boolean isDeleted = userStorage.delete(id);
-        if (isDeleted) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         User user = userStorage.getById(id);
-        if (user != null) {
-            return ResponseEntity.ok(UserDtoMapper.toDto(user));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return user != null ? ResponseEntity.ok(UserDtoMapper.toDto(user)) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
@@ -78,9 +68,6 @@ public class UserController {
     @PutMapping("/{id}/friends/{friendId}")
     public ResponseEntity<UserDto> addFriends(@PathVariable Long id, @PathVariable Long friendId) {
         User user = userService.addFriend(id, friendId);
-        if (user == null) {
-            throw new RuntimeException("User is null after adding friend");
-        }
         return ResponseEntity.ok(UserDtoMapper.toDto(user));
     }
 

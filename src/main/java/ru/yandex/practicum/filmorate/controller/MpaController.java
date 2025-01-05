@@ -30,7 +30,6 @@ public class MpaController {
     @GetMapping("/{id}")
     public ResponseEntity<MpaDto> getMpaRatingById(@PathVariable Long id) {
         Mpa mpa = mpaDao.getMpaRatingById(id);
-        MpaDto mpaDto = MpaDtoMapper.toDto(mpa);
-        return ResponseEntity.ok(mpaDto);
+        return ResponseEntity.ok(MpaDtoMapper.toDto(mpa));
     }
 }

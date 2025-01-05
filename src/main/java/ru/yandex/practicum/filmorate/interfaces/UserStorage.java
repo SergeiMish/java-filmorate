@@ -17,11 +17,4 @@ public interface UserStorage {
 
     Collection<User> getAll();
 
-    void removeFriend(Long id, Long friendId);
-
-    void addFriend(Long user1Id, Long user2Id);
-
-    boolean isFriendshipExists(Long user1Id, Long user2Id);
-
-    List<Long> getFriendIds(Long id);
 }

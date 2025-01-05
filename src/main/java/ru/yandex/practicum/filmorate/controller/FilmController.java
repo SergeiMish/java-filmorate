@@ -31,24 +31,16 @@ public class FilmController {
     private final FilmStorage filmStorage;
     private final FilmService filmService;
     private final ValidateFilm filmValidator;
-    private final FilmDao filmDao;
 
     @PostMapping
     public ResponseEntity<FilmDto> postFilm(@RequestBody @Valid FilmDto filmDto) {
-
         log.info("Received request to create film: {}", filmDto);
-        try {
-            Film film = FilmDtoMapper.toModel(filmDto);
-            filmValidator.validateFilm(film);
-            Film createdFilm = filmStorage.create(film);
-            log.info("Film created successfully: {}", createdFilm);
-            return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
-        } catch (IllegalArgumentException e) {
-            log.error("Error creating film: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+        Film film = FilmDtoMapper.toModel(filmDto);
+        filmValidator.validateFilm(film);
+        Film createdFilm = filmStorage.create(film);
+        log.info("Film created successfully: {}", createdFilm);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
     }
-
 
     @GetMapping
     public Collection<FilmDto> getFilms() {
@@ -59,14 +51,8 @@ public class FilmController {
 
     @GetMapping("/{id}")
     public ResponseEntity<FilmDto> getFilmById(@PathVariable Long id) {
-        try {
-            Film film = filmStorage.getById(id);
-            return ResponseEntity.ok(FilmDtoMapper.toDto(film));
-        } catch (NotFoundObjectException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        Film film = filmStorage.getById(id);
+        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
     }
 
     @GetMapping("/popular")

@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,14 +17,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/genres")
+@RequiredArgsConstructor
 public class GenreController {
 
     private final GenreDao genreDao;
-
-    @Autowired
-    public GenreController(GenreDao genreDao) {
-        this.genreDao = genreDao;
-    }
 
     @GetMapping
     public ResponseEntity<List<GenreDto>> getAllGenres() {
@@ -36,11 +32,7 @@ public class GenreController {
 
     @GetMapping("/{id}")
     public ResponseEntity<GenreDto> getGenreById(@PathVariable Long id) {
-        try {
-            Genre genre = genreDao.getGenreById(id);
-            return ResponseEntity.ok(GenreDtoMapper.toDto(genre));
-        } catch (NotFoundObjectException e) {
-            return ResponseEntity.notFound().build();
-        }
+        Genre genre = genreDao.getGenreById(id);
+        return ResponseEntity.ok(GenreDtoMapper.toDto(genre));
     }
 }

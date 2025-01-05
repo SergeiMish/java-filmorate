@@ -14,9 +14,10 @@ import java.util.HashSet;
 public class FilmRowMapper implements RowMapper<Film> {
     @Override
     public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
-        Mpa mpa = new Mpa();
-        mpa.setId(rs.getLong("mpa_id"));
-        mpa.setName(rs.getString("mpa_name")); // Используйте псевдоним из запроса
+        Mpa mpa = Mpa.builder()
+                .id(rs.getLong("mpa_id"))
+                .name(rs.getString("mpa_name"))
+                .build();
 
         return Film.builder()
                 .id(rs.getLong("film_id"))
