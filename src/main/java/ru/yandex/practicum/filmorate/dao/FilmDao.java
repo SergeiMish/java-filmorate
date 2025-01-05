@@ -81,6 +81,7 @@ public class FilmDao implements FilmStorage {
 
         return film;
     }
+
     @Override
     public boolean delete(Long id) {
         String sqlQuery = "DELETE FROM Films WHERE film_id = ?";
@@ -197,6 +198,7 @@ public class FilmDao implements FilmStorage {
             throw new ValidationException("Некоторые жанры не существуют: " + genreIds);
         }
     }
+
     private boolean filmExists(Long filmId) {
         String sqlQuery = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
         Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, filmId);
