@@ -1,69 +1,86 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.dto.mapper.UserDtoMapper;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @RestController
 @RequestMapping("/users")
 @Validated
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserStorage userStorage;
     private final UserService userService;
 
-    @Autowired
-    public UserController(UserStorage userStorage, UserService userService) {
-        this.userStorage = userStorage;
-        this.userService = userService;
-    }
-
     @PostMapping
-    public User postUser(@RequestBody @Valid User user) {
-        return userStorage.create(user);
+    public UserDto postUser(@RequestBody @Valid UserDto userDto) {
+        User user = UserDtoMapper.toModel(userDto);
+        User createdUser = userStorage.create(user);
+        return UserDtoMapper.toDto(createdUser);
     }
 
     @GetMapping
-    public Collection<User> getUsers() {
-        return userStorage.getAll();
+    public Collection<UserDto> getUsers() {
+        return userStorage.getAll().stream()
+                .map(UserDtoMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        boolean isDeleted = userStorage.delete(id);
+        return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
-        return userStorage.getById(id);
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        User user = userStorage.getById(id);
+        return user != null ? ResponseEntity.ok(UserDtoMapper.toDto(user)) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Set<User> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
-        return userService.getCommonFriends(id, otherId);
+    public Set<UserDto> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+        return userService.getCommonFriends(id, otherId).stream()
+                .map(UserDtoMapper::toDto)
+                .collect(Collectors.toSet());
     }
 
     @GetMapping("/{id}/friends")
-    public Set<User> getFriends(@PathVariable Long id) {
-        return userService.listFriends(id);
+    public Set<UserDto> getFriends(@PathVariable Long id) {
+        return userService.listFriends(id).stream()
+                .map(UserDtoMapper::toDto)
+                .collect(Collectors.toSet());
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public User addFriends(@PathVariable Long id, @PathVariable Long friendId) {
-        return userService.addFriend(id, friendId);
+    public ResponseEntity<UserDto> addFriends(@PathVariable Long id, @PathVariable Long friendId) {
+        User user = userService.addFriend(id, friendId);
+        return ResponseEntity.ok(UserDtoMapper.toDto(user));
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public User deleteFriends(@PathVariable Long id, @PathVariable Long friendId) {
-        return userService.removeFriend(id, friendId);
+    public ResponseEntity<UserDto> deleteFriends(@PathVariable Long id, @PathVariable Long friendId) {
+        User user = userService.removeFriend(id, friendId);
+        return ResponseEntity.ok(UserDtoMapper.toDto(user));
     }
 
     @PutMapping
-    public User putUser(@RequestBody User user) {
-        return userStorage.update(user);
+    public ResponseEntity<UserDto> putUser(@RequestBody @Valid UserDto userDto) {
+        User user = UserDtoMapper.toModel(userDto);
+        User updatedUser = userStorage.update(user);
+        return ResponseEntity.ok(UserDtoMapper.toDto(updatedUser));
     }
-
 }
