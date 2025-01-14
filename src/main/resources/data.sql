@@ -1,3 +1,11 @@
+DELETE FROM FilmGenres;
+DELETE FROM Likes;
+DELETE FROM Friendships;
+DELETE FROM Films;
+DELETE FROM Genres;
+DELETE FROM MpaRatings;
+DELETE FROM Users;
+
 INSERT INTO Genres (genre_id, name) VALUES (1, 'Комедия');
 INSERT INTO Genres (genre_id, name) VALUES (2, 'Драма');
 INSERT INTO Genres (genre_id, name) VALUES (3, 'Мультфильм');
