@@ -54,13 +54,16 @@ public class FilmService {
         return film;
     }
 
-    public List<Film> mostPopularFilms(int limit) {
-        List<Film> popularFilms = filmStorage.getAll().stream()
+    public List<Film> mostPopularFilms(int limit, Long genreId, Integer year) {
+        logger.info("Получение самых популярных фильмов. Параметры: limit={}, genreId={}, year={}",
+                limit, genreId, year);
+        return filmStorage.getAll().stream()
+                .filter(film -> genreId == null || film.getGenres().stream()
+                        .anyMatch(genre -> genre.getId().equals(genreId)))
+                .filter(film -> year == null || film.getReleaseDate().getYear() == year)
                 .sorted(Comparator.comparingInt(this::getLikesCount).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
-        logger.info("Получены самые популярные фильмы, количество: {}", limit);
-        return popularFilms;
     }
 
     private int getLikesCount(Film film) {

@@ -168,11 +168,36 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Collection<Film> getAll() {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, " +
+                "m.name AS mpa_name " +
                 "FROM Films f " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
                 "ORDER BY f.film_id";
-        return jdbcTemplate.query(sqlQuery, filmRowMapper);
+
+        List<Film> films = jdbcTemplate.query(sqlQuery, filmRowMapper);
+
+        Map<Long, List<Genre>> genresByFilmId = loadGenresForFilms();
+        for (Film film : films) {
+            List<Genre> genres = genresByFilmId.getOrDefault(film.getId(), new ArrayList<>());
+            film.setGenres(genres);
+        }
+        return films;
+    }
+
+    private Map<Long, List<Genre>> loadGenresForFilms() {
+        String sqlQuery = "SELECT fg.film_id, g.genre_id, g.name " +
+                "FROM FilmGenres fg " +
+                "JOIN Genres g ON fg.genre_id = g.genre_id";
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlQuery);
+
+        return rows.stream().collect(Collectors.groupingBy(
+                row -> (Long) row.get("film_id"),
+                Collectors.mapping(row -> Genre.builder()
+                        .id((Long) row.get("genre_id"))
+                        .name((String) row.get("name"))
+                        .build(), Collectors.toList())
+        ));
     }
 
     private void validateMpaExists(Long mpaId) {
