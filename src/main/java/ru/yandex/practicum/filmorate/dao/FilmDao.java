@@ -84,8 +84,11 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public boolean delete(Long id) {
-        String sqlQuery = "DELETE FROM Films WHERE film_id = ?";
-        return jdbcTemplate.update(sqlQuery, id) > 0;
+        String deleteGenresSql = "DELETE FROM FilmGenres WHERE film_id = ?";
+        jdbcTemplate.update(deleteGenresSql, id);
+
+        String deleteFilmSql = "DELETE FROM Films WHERE film_id = ?";
+        return jdbcTemplate.update(deleteFilmSql, id) > 0;
     }
 
     @Override
