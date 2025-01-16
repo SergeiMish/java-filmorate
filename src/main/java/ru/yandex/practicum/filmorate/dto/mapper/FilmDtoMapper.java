@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -7,7 +9,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
+@Component
+@RequiredArgsConstructor
 public class FilmDtoMapper {
+
+    private static final DirectorMapper directorMapper = new DirectorMapper(); //стоит обратить внимание
 
     public static FilmDto toDto(Film model) {
         return FilmDto.builder()
@@ -21,6 +27,7 @@ public class FilmDtoMapper {
                         .map(GenreDtoMapper::toDto)
                         .collect(Collectors.toList()) : new ArrayList<>())
                 .mpa(model.getMpa())
+                .director(directorMapper.mapToDirectorDtoList(model.getDirector()))
                 .build();
     }
 
@@ -36,6 +43,7 @@ public class FilmDtoMapper {
                         .map(GenreDtoMapper::toModel)
                         .collect(Collectors.toList()) : new ArrayList<>())
                 .mpa(filmDto.getMpa())
+                .director(directorMapper.mapToDirectorList(filmDto.getDirector()))
                 .build();
     }
 }

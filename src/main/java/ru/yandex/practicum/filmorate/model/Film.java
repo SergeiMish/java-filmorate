@@ -8,6 +8,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -41,5 +42,11 @@ public class Film {
     private Set<Long> likes = new HashSet<>();
     private List<Genre> genres;
 
+    private LinkedHashSet<Director> director;
+
     private Mpa mpa;
+
+    public int getPopularity() {
+        return likes.size();
+    }
 }

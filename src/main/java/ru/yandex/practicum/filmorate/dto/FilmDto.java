@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,6 +34,8 @@ public class FilmDto {
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
     private List<GenreDto> genres;
+
+    private LinkedHashSet<DirectorDto> director;
 
     private Mpa mpa;
 }

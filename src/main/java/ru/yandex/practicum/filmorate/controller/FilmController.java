@@ -15,8 +15,13 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static ru.yandex.practicum.filmorate.model.FilmSortParam.FILMS_BY_RELEASE_DATE;
+import static ru.yandex.practicum.filmorate.model.FilmSortParam.POPULAR_FILMS_BY_LIKES;
 
 @Validated
 @RestController
@@ -36,11 +41,17 @@ public class FilmController {
         filmValidator.validateFilm(film);
         Film createdFilm = filmStorage.create(film);
         log.info("Film created successfully: {}", createdFilm);
+        createdFilm.setDirector(film.getDirector());
+        filmService.addDirectorsForFilm(createdFilm);
         return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
     }
 
     @GetMapping
     public Collection<FilmDto> getFilms() {
+        List<Film> films = (List<Film>) filmStorage.getAll();
+        for (Film film : films) {
+            film.setDirector(filmService.findDirectorsForFilm((int) film.getId()));
+        }
         return filmStorage.getAll().stream()
                 .map(FilmDtoMapper::toDto)
                 .collect(Collectors.toList());
@@ -49,11 +60,16 @@ public class FilmController {
     @GetMapping("/{id}")
     public ResponseEntity<FilmDto> getFilmById(@PathVariable Long id) {
         Film film = filmStorage.getById(id);
+        film.setDirector(filmService.findDirectorsForFilm((int) film.getId()));
         return ResponseEntity.ok(FilmDtoMapper.toDto(film));
     }
 
     @GetMapping("/popular")
     public List<FilmDto> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
+        List<Film> films = filmService.mostPopularFilms(count);
+        for (Film film : films) {
+            film.setDirector(filmService.findDirectorsForFilm((int) film.getId()));
+        }
         return filmService.mostPopularFilms(count).stream()
                 .map(FilmDtoMapper::toDto)
                 .collect(Collectors.toList());
@@ -77,5 +93,38 @@ public class FilmController {
         filmValidator.validateFilm(film);
         Film updatedFilm = filmStorage.update(film);
         return ResponseEntity.ok(FilmDtoMapper.toDto(updatedFilm));
+    }
+
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<Object> getFilmsByDirector(@PathVariable Integer directorId,
+                                                     @RequestParam(name = "sortBy", required = false) String sortBy) {
+        try {
+            List<Film> films;
+            switch (sortBy.toLowerCase()) {
+                case "year":
+                    films = filmService.getFilmsByDirectorSorted(directorId, FILMS_BY_RELEASE_DATE);
+                    break;
+                case "likes":
+                    films = filmService.getFilmsByDirectorSorted(directorId, POPULAR_FILMS_BY_LIKES);
+                    break;
+                default:
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Invalid sortBy parameter: '" + sortBy + "'. Allowed values - year, likes");
+                    return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            for (Film film : films) {
+                film.setDirector(filmService.findDirectorsForFilm((int) film.getId()));
+            }
+            return ResponseEntity.ok(films.stream()
+                    .map(FilmDtoMapper::toDto)
+                    .toList());
+        } catch (IllegalArgumentException e) {
+            log.error(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.internalServerError().body("Internal Server Error");
+        }
     }
 }
