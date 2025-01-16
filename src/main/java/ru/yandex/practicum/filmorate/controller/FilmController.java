@@ -69,7 +69,6 @@ public class FilmController {
         return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
-
     @GetMapping("/popular")
     public List<FilmDto> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
         return filmService.mostPopularFilms(count).stream()
