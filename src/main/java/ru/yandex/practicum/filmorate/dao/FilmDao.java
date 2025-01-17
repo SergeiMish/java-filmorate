@@ -102,7 +102,8 @@ public class FilmDao implements FilmStorage {
                 .map(Mpa::getId)
                 .orElse(null);
 
-        String sqlQuery = "UPDATE Films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
+        String sqlQuery = "UPDATE Films SET name = ?, " +
+                "description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
         jdbcTemplate.update(sqlQuery,
                 film.getName(),
                 film.getDescription(),
@@ -116,7 +117,8 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film getById(Long id) {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name, " +
+        String sqlQuery = "SELECT f.film_id, f.name, f.description, " +
+                "f.release_date, f.duration, f.mpa_id, m.name AS mpa_name, " +
                 "g.genre_id, g.name AS genre_name " +
                 "FROM Films f " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
@@ -245,8 +247,8 @@ public class FilmDao implements FilmStorage {
                 "r.rating_id AS rating_id, " +
                 "r.rating_name AS rating_name " +
                 "FROM films AS f " +
-                "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
                 "JOIN ratings r ON r.rating_id = f.mpa_rating_id " +
+                "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
                 "LEFT JOIN films_directors fd on f.film_id = fd.film_id " +
                 "WHERE fd.director_id = ? " +
                 "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, r.rating_id, r.rating_name " +

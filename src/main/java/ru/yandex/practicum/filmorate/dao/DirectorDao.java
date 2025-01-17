@@ -8,10 +8,10 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.interfaces.DirectorStorage;
-import ru.yandex.practicum.filmorate.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.interfaces.DirectorStorage;
+import ru.yandex.practicum.filmorate.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -29,7 +29,8 @@ public class DirectorDao implements DirectorStorage {
     private final DirectorRowMapper directorRowMapper;
 
     @Autowired
-    public DirectorDao(final JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate, final DirectorRowMapper directorRowMapper) {
+    public DirectorDao(final JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                       final DirectorRowMapper directorRowMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.directorRowMapper = directorRowMapper;
@@ -41,10 +42,10 @@ public class DirectorDao implements DirectorStorage {
     }
 
     @Override
-    public Optional<Director> findDirectorById(int director_id) {
+    public Optional<Director> findDirectorById(int directorId) {
         String sql = "SELECT * FROM directors WHERE director_id = ?";
         try {
-            Director director = jdbcTemplate.queryForObject(sql, directorRowMapper, director_id);
+            Director director = jdbcTemplate.queryForObject(sql, directorRowMapper, directorId);
             return Optional.ofNullable(director);
         } catch (Exception e) {
             return Optional.empty();

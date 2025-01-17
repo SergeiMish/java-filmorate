@@ -65,6 +65,7 @@ public class FilmController {
         if (film == null) {
             throw new NotFoundObjectException("Фильм с ID " + id + " не найден.");
         }
+        film.setDirector(filmService.findDirectorsForFilm((int) film.getId()));
         FilmDto filmDto = FilmDtoMapper.toDto(film);
         return ResponseEntity.ok(filmDto);
     }
@@ -85,7 +86,7 @@ public class FilmController {
             @RequestParam(value = "limit", defaultValue = "10") @Positive int limit,
             @RequestParam(value = "genreId", required = false) Long genreId,
             @RequestParam(value = "year", required = false) Integer year) {
-        List<Film> films = filmService.mostPopularFilms(count);
+        List<Film> films = filmService.mostPopularFilms(limit, genreId, year);
         for (Film film : films) {
             film.setDirector(filmService.findDirectorsForFilm((int) film.getId()));
         }
@@ -128,7 +129,8 @@ public class FilmController {
                     break;
                 default:
                     Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "Invalid sortBy parameter: '" + sortBy + "'. Allowed values - year, likes");
+                    errorResponse.put("error", "Invalid sortBy parameter: '" +
+                            sortBy + "'. Allowed values - year, likes");
                     return ResponseEntity.badRequest().body(errorResponse);
             }
 
