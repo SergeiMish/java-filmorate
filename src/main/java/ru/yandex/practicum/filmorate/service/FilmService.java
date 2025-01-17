@@ -19,7 +19,7 @@ public class FilmService {
     private static final Logger logger = LoggerFactory.getLogger(FilmService.class);
     private final FilmStorage filmStorage;
     private final UserService userService;
-    private final JdbcTemplate jdbcTemplate;;
+    private final JdbcTemplate jdbcTemplate;
 
     public Film addLike(Long filmId, Long userId) {
         Film film = filmStorage.getById(filmId);
@@ -57,14 +57,25 @@ public class FilmService {
 
     public List<Film> mostPopularFilms(int limit, Long genreId, Integer year) {
         logger.info("Получение самых популярных фильмов. Параметры: limit={}, genreId={}, year={}",
-                limit, genreId, year);
+                    limit, genreId, year);
         return filmStorage.getAll().stream()
-                .filter(film -> genreId == null || film.getGenres().stream()
-                        .anyMatch(genre -> genre.getId().equals(genreId)))
-                .filter(film -> year == null || film.getReleaseDate().getYear() == year)
-                .sorted(Comparator.comparingInt(this::getLikesCount).reversed())
-                .limit(limit)
-                .collect(Collectors.toList());
+                          .filter(film -> genreId == null || film.getGenres().stream()
+                                                                 .anyMatch(genre -> genre.getId().equals(genreId)))
+                          .filter(film -> year == null || film.getReleaseDate().getYear() == year)
+                          .sorted(Comparator.comparingInt(this::getLikesCount).reversed())
+                          .limit(limit)
+                          .collect(Collectors.toList());
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        logger.info("Fetching common films for userId={} and friendId={}", userId, friendId);
+        List<Film> userFilms = filmStorage.getFilmsByUserId(userId);
+        List<Film> friendFilms = filmStorage.getFilmsByUserId(friendId);
+
+        return userFilms.stream()
+                        .filter(friendFilms::contains)
+                        .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
+                        .collect(Collectors.toList());
     }
 
     private int getLikesCount(Film film) {
