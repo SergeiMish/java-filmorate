@@ -19,16 +19,13 @@ public class FilmService {
     private static final Logger logger = LoggerFactory.getLogger(FilmService.class);
     private final FilmStorage filmStorage;
     private final UserService userService;
-    private final JdbcTemplate jdbcTemplate;
+    private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
 
     public Film addLike(Long filmId, Long userId) {
         Film film = filmStorage.getById(filmId);
         userService.getUserOrThrow(userId);
         film.getLikes().add(userId);
-
-        String sqlQuery = "INSERT INTO Likes (film_id, user_id) VALUES (?, ?)";
-        jdbcTemplate.update(sqlQuery, filmId, userId);
-
+        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
         filmStorage.update(film);
         return film;
     }
@@ -37,12 +34,15 @@ public class FilmService {
         Film film = getFilmOrThrow(filmId);
         userService.getUserOrThrow(userId);
 
-        String sqlQuery = "DELETE FROM Likes WHERE film_id = ? AND user_id = ?";
-        jdbcTemplate.update(sqlQuery, filmId, userId);
-
-        film.getLikes().remove(userId);
-        filmStorage.update(film);
-        logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
+        Set<Long> likes = filmLikes.get(filmId);
+        if (likes != null) {
+            likes.remove(userId);
+            if (likes.isEmpty()) {
+                filmLikes.remove(filmId);
+            }
+            filmStorage.update(film);
+            logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
+        }
 
         return film;
     }
@@ -53,6 +53,17 @@ public class FilmService {
             throw new NotFoundObjectException("Фильм с ID " + filmId + " не найден");
         }
         return film;
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        logger.info("Fetching common films for userId={} and friendId={}", userId, friendId);
+        List<Film> userFilms = filmStorage.getFilmsByUserId(userId);
+        List<Film> friendFilms = filmStorage.getFilmsByUserId(friendId);
+
+        return userFilms.stream()
+                        .filter(friendFilms::contains)
+                        .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
+                        .collect(Collectors.toList());
     }
 
     public List<Film> mostPopularFilms(int limit, Long genreId, Integer year) {
@@ -67,20 +78,7 @@ public class FilmService {
                           .collect(Collectors.toList());
     }
 
-    public List<Film> getCommonFilms(Long userId, Long friendId) {
-        logger.info("Fetching common films for userId={} and friendId={}", userId, friendId);
-        List<Film> userFilms = filmStorage.getFilmsByUserId(userId);
-        List<Film> friendFilms = filmStorage.getFilmsByUserId(friendId);
-
-        return userFilms.stream()
-                        .filter(friendFilms::contains)
-                        .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                        .collect(Collectors.toList());
-    }
-
     private int getLikesCount(Film film) {
-        String sqlQuery = "SELECT COUNT(*) FROM Likes WHERE film_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, film.getId());
-        return count != null ? count : 0;
+        return filmLikes.getOrDefault(film.getId(), Collections.emptySet()).size();
     }
 }
