@@ -205,25 +205,6 @@ public class FilmDao implements FilmStorage {
         return films;
     }
 
-    @Override
-    public List<Film> getFilmsByUserId(Long userId) {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
-                "FROM Films f " +
-                "JOIN Likes l ON f.film_id = l.film_id " +
-                "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
-                "WHERE l.user_id = ?";
-
-        List<Film> films = jdbcTemplate.query(sqlQuery, filmRowMapper, userId);
-
-        Map<Long, List<Genre>> genresByFilmId = loadGenresForFilms();
-        for (Film film : films) {
-            List<Genre> genres = genresByFilmId.getOrDefault(film.getId(), new ArrayList<>());
-            film.setGenres(genres);
-        }
-        return films;
-    }
-
-
     private Map<Long, List<Genre>> loadGenresForFilms() {
         String sqlQuery = "SELECT fg.film_id, g.genre_id, g.name " +
                 "FROM FilmGenres fg " +
