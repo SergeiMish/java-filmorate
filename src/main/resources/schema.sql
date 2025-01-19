@@ -5,6 +5,8 @@ DROP TABLE IF EXISTS Films CASCADE;
 DROP TABLE IF EXISTS Genres CASCADE;
 DROP TABLE IF EXISTS MpaRatings CASCADE;
 DROP TABLE IF EXISTS Users CASCADE;
+DROP TABLE IF EXISTS Reviews CASCADE;
+DROP TABLE IF EXISTS ReviewLikes CASCADE;
 
 CREATE TABLE IF NOT EXISTS Users
 (
@@ -36,6 +38,24 @@ CREATE TABLE IF NOT EXISTS Films (
                                      duration INT NOT NULL,
                                      mpa_id BIGINT,
                                      FOREIGN KEY (mpa_id) REFERENCES MpaRatings(mpa_id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS Reviews (
+                                     review_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                     content VARCHAR(1000) NOT NULL,
+                                     is_positive BOOLEAN NOT NULL,
+                                     user_id BIGINT NOT NULL,
+                                     film_id BIGINT NOT NULL,
+                                     useful INT DEFAULT 0,
+                                     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+                                     FOREIGN KEY (film_id) REFERENCES Films(film_id) ON DELETE CASCADE
+);
+CREATE TABLE ReviewLikes (
+                             review_id BIGINT NOT NULL,
+                             user_id BIGINT NOT NULL,
+                             is_like BOOLEAN NOT NULL,
+                             PRIMARY KEY (review_id, user_id),
+                             FOREIGN KEY (review_id) REFERENCES Reviews(review_id),
+                             FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
 CREATE TABLE IF NOT EXISTS Genres (
