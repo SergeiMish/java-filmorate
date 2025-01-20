@@ -19,4 +19,7 @@ public interface FilmStorage {
     Collection<Film> getAll();
 
     List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy);
+
+    List<Film> getFilmsByUserId(Long userId);
+
 }

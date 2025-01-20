@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.DirectorDao;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
@@ -25,11 +26,10 @@ import static ru.yandex.practicum.filmorate.exeption.ErrorMessages.DIRECTOR_NOT_
 @Service
 @RequiredArgsConstructor
 public class FilmService {
-
     private static final Logger logger = LoggerFactory.getLogger(FilmService.class);
     private final FilmStorage filmStorage;
     private final UserService userService;
-    private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
+    private final JdbcTemplate jdbcTemplate;
     private final DirectorDao directorDao;
     private static final Map<String, SortDirectorFilmsStrategy> SORT_DIRECTOR_FILMS_STRATEGIES = Map.of(
             "year", new SortDirectorFilmsByDate(),
@@ -51,28 +51,21 @@ public class FilmService {
         Film film = filmStorage.getById(filmId);
         userService.getUserOrThrow(userId);
         film.getLikes().add(userId);
-        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
+        String sqlQuery = "INSERT INTO Likes (film_id, user_id) VALUES (?, ?)";
+        jdbcTemplate.update(sqlQuery, filmId, userId);
         filmStorage.update(film);
         return film;
     }
-
     public Film removeLike(Long filmId, Long userId) {
         Film film = getFilmOrThrow(filmId);
         userService.getUserOrThrow(userId);
-
-        Set<Long> likes = filmLikes.get(filmId);
-        if (likes != null) {
-            likes.remove(userId);
-            if (likes.isEmpty()) {
-                filmLikes.remove(filmId);
-            }
-            filmStorage.update(film);
-            logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
-        }
-
+        String sqlQuery = "DELETE FROM Likes WHERE film_id = ? AND user_id = ?";
+        jdbcTemplate.update(sqlQuery, filmId, userId);
+        film.getLikes().remove(userId);
+        filmStorage.update(film);
+        logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
         return film;
     }
-
     private Film getFilmOrThrow(Long filmId) {
         Film film = filmStorage.getById(filmId);
         if (film == null) {
@@ -93,8 +86,21 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        logger.info("Fetching common films for userId={} and friendId={}", userId, friendId);
+        List<Film> userFilms = filmStorage.getFilmsByUserId(userId);
+        List<Film> friendFilms = filmStorage.getFilmsByUserId(friendId);
+
+        return userFilms.stream()
+                .filter(friendFilms::contains)
+                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
+                .collect(Collectors.toList());
+    }
+
     private int getLikesCount(Film film) {
-        return filmLikes.getOrDefault(film.getId(), Collections.emptySet()).size();
+        String sqlQuery = "SELECT COUNT(*) FROM Likes WHERE film_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, film.getId());
+        return count != null ? count : 0;
     }
 
     public List<Director> getDirectors() {
