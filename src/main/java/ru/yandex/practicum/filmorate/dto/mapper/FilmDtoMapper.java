@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.dto.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -13,7 +14,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmDtoMapper {
 
-    private static final DirectorMapper directorMapper = new DirectorMapper(); //стоит обратить внимание
+    private static DirectorDtoMapper directorDtoMapper = new DirectorDtoMapper();
+
+    public static Film map(CreateFilmDto filmDto) {
+        return Film.builder()
+                .name(filmDto.getName())
+                .description(filmDto.getDescription())
+                .mpa(MpaDtoMapper.toModel(filmDto.getMpa()))
+                .releaseDate(filmDto.getReleaseDate())
+                .duration(filmDto.getDuration())
+                .genres(filmDto.getGenres() != null ? filmDto.getGenres().stream()
+                        .map(GenreDtoMapper::toModel)
+                        .collect(Collectors.toList()) : new ArrayList<>())
+                .directors(directorDtoMapper.mapToDirectorList(filmDto.getDirector()))
+                .build();
+    }
 
     public static FilmDto toDto(Film model) {
         return FilmDto.builder()
@@ -27,7 +42,7 @@ public class FilmDtoMapper {
                         .map(GenreDtoMapper::toDto)
                         .collect(Collectors.toList()) : new ArrayList<>())
                 .mpa(model.getMpa())
-                .director(directorMapper.mapToDirectorDtoList(model.getDirector()))
+                .directors(directorDtoMapper.mapToDirectorDtoList(model.getDirectors()))
                 .build();
     }
 
@@ -43,7 +58,7 @@ public class FilmDtoMapper {
                         .map(GenreDtoMapper::toModel)
                         .collect(Collectors.toList()) : new ArrayList<>())
                 .mpa(filmDto.getMpa())
-                .director(directorMapper.mapToDirectorList(filmDto.getDirector()))
+                .directors(directorDtoMapper.mapToDirectorList(filmDto.getDirectors()))
                 .build();
     }
 }

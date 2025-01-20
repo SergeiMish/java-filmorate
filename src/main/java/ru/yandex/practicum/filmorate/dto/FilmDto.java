@@ -35,7 +35,7 @@ public class FilmDto {
     private Set<Long> likes = new HashSet<>();
     private List<GenreDto> genres;
 
-    private LinkedHashSet<DirectorDto> director;
+    private LinkedHashSet<DirectorDto> directors;
 
     private Mpa mpa;
 }

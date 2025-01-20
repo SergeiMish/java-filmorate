@@ -17,7 +17,7 @@ public class FilmRowMapper implements RowMapper<Film> {
     public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
         Mpa mpa = Mpa.builder()
                 .id(rs.getLong("mpa_id"))
-                .name(rs.getString("mpa_name"))
+                .name(rs.getString("name"))
                 .build();
 
         return Film.builder()
@@ -29,7 +29,7 @@ public class FilmRowMapper implements RowMapper<Film> {
                 .mpa(mpa)
                 .likes(new HashSet<>())
                 .genres(new ArrayList<>())
-                .director(new LinkedHashSet<>())
+                .directors(new LinkedHashSet<>())
                 .build();
     }
 }

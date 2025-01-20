@@ -5,7 +5,6 @@ DELETE FROM Films;
 DELETE FROM Genres;
 DELETE FROM MpaRatings;
 DELETE FROM Users;
-DELETE FROM Directors;
 
 INSERT INTO Genres (genre_id, name) VALUES (1, 'Комедия');
 INSERT INTO Genres (genre_id, name) VALUES (2, 'Драма');

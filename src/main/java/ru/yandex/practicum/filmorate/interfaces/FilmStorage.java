@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.interfaces;
 
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.FilmSortParam;
+import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,5 +18,5 @@ public interface FilmStorage {
 
     Collection<Film> getAll();
 
-    List<Film> getFilmsByDirectorSorted(int directorId, FilmSortParam sortParam);
+    List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy);
 }

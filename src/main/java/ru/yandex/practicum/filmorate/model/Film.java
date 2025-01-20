@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,14 +38,10 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительной")
     private int duration;
 
-    private Set<Long> likes = new HashSet<>();
+    private Set<Long> likes;
     private List<Genre> genres;
-
-    private LinkedHashSet<Director> director;
 
     private Mpa mpa;
 
-    public int getPopularity() {
-        return likes.size();
-    }
+    private LinkedHashSet<Director> directors;
 }

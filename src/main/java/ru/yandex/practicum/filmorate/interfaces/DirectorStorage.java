@@ -4,7 +4,9 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface DirectorStorage {
     List<Director> findAllDirectors();
@@ -19,7 +21,9 @@ public interface DirectorStorage {
 
     void deleteDirector(int directorId);
 
-    Film addDirectorOfFilm(Film film);
+    List<Director> findDirectorForFilm(Long filmId);
 
-    List<Director> findDirectorForFilm(int filmId);
+    void updateDirectorOfFilm(Film film);
+
+    Map<Long, Set<Director>> loadFilmsDirectors(List<Long> filmIds);
 }

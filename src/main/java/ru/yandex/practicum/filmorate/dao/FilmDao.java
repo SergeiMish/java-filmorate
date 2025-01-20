@@ -14,23 +14,25 @@ import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.FilmSortParam;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.sort.SortDirectorFilms;
+import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Repository
 @RequiredArgsConstructor
-@Slf4j
 public class FilmDao implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
+    private final SortDirectorFilms sortDirectorFilms;
+    private final DirectorDao directorDao;
 
     @Override
     public Film create(Film film) {
@@ -135,7 +137,7 @@ public class FilmDao implements FilmStorage {
                     if (film == null) {
                         Mpa mpa = Mpa.builder()
                                 .id(rs.getLong("mpa_id"))
-                                .name(rs.getString("mpa_name"))
+                                .name(rs.getString("name"))
                                 .build();
 
                         film = Film.builder()
@@ -153,7 +155,7 @@ public class FilmDao implements FilmStorage {
                     if (genreId != null && genreId > 0) {
                         Genre genre = Genre.builder()
                                 .id(genreId)
-                                .name(rs.getString("genre_name"))
+                                .name(rs.getString("name"))
                                 .build();
                         genreSet.add(genre);
                     }
@@ -237,22 +239,8 @@ public class FilmDao implements FilmStorage {
     }
 
     @Override
-    public List<Film> getFilmsByDirectorSorted(int directorId, FilmSortParam sortParam) {
-        String filmsSql = "SELECT " +
-                "f.film_id AS film_id, " +
-                "f.name AS film_name, " +
-                "f.description AS description, " +
-                "f.release_date AS release_date, " +
-                "f.duration AS duration, " +
-                "r.rating_id AS rating_id, " +
-                "r.rating_name AS rating_name " +
-                "FROM films AS f " +
-                "JOIN ratings r ON r.rating_id = f.mpa_rating_id " +
-                "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
-                "LEFT JOIN films_directors fd on f.film_id = fd.film_id " +
-                "WHERE fd.director_id = ? " +
-                "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, r.rating_id, r.rating_name " +
-                "ORDER BY " + sortParam.getSortParam();
-        return jdbcTemplate.query(filmsSql, filmRowMapper, directorId);
+    public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
+        sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
+        return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
     }
 }

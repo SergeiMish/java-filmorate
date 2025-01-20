@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -10,8 +9,8 @@ import lombok.*;
 @ToString
 @EqualsAndHashCode
 @Builder
-public class DirectorDto {
-    @NotNull
+public class CreateDirectorDto {
+
     private Integer id;
 
     @NotBlank

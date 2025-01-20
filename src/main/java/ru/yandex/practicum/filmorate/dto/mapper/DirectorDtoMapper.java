@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dto.CreateDirectorDto;
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.Director;
 
@@ -9,7 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class DirectorMapper {
+public class DirectorDtoMapper {
     public DirectorDto map(Director director) {
         return DirectorDto.builder()
                 .id(director.getId())
@@ -20,6 +21,12 @@ public class DirectorMapper {
     public Director map(DirectorDto directorDto) {
         return Director.builder()
                 .id(directorDto.getId())
+                .name(directorDto.getName())
+                .build();
+    }
+
+    public Director map(CreateDirectorDto directorDto) {
+        return Director.builder()
                 .name(directorDto.getName())
                 .build();
     }
