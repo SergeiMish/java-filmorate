@@ -44,8 +44,8 @@ public class FilmController {
     @GetMapping
     public Collection<FilmDto> getFilms() {
         return filmStorage.getAll().stream()
-                          .map(FilmDtoMapper::toDto)
-                          .collect(Collectors.toList());
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
@@ -75,8 +75,8 @@ public class FilmController {
             @RequestParam(value = "genreId", required = false) Long genreId,
             @RequestParam(value = "year", required = false) Integer year) {
         return filmService.mostPopularFilms(limit, genreId, year).stream()
-                          .map(FilmDtoMapper::toDto)
-                          .collect(Collectors.toList());
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @PutMapping("/{id}/like/{userId}")
@@ -105,7 +105,7 @@ public class FilmController {
             @RequestParam Long friendId) {
         log.info("Received request for common films of user {} and friend {}", userId, friendId);
         return filmService.getCommonFilms(userId, friendId).stream()
-                          .map(FilmDtoMapper::toDto)
-                          .collect(Collectors.toList());
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

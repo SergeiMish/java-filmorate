@@ -6,10 +6,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +22,7 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
     private final JdbcTemplate jdbcTemplate;
+    private final EventStorage eventStorage;
 
     public Film addLike(Long filmId, Long userId) {
         Film film = filmStorage.getById(filmId);
@@ -27,8 +31,18 @@ public class FilmService {
         String sqlQuery = "INSERT INTO Likes (film_id, user_id) VALUES (?, ?)";
         jdbcTemplate.update(sqlQuery, filmId, userId);
         filmStorage.update(film);
+
+        eventStorage.addEvent(Event.builder()
+                .timestamp(System.currentTimeMillis())
+                .userId(userId)
+                .eventType("LIKE")
+                .operation("ADD")
+                .entityId(filmId)
+                .build());
+
         return film;
     }
+
     public Film removeLike(Long filmId, Long userId) {
         Film film = getFilmOrThrow(filmId);
         userService.getUserOrThrow(userId);
@@ -37,8 +51,18 @@ public class FilmService {
         film.getLikes().remove(userId);
         filmStorage.update(film);
         logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
+
+        eventStorage.addEvent(Event.builder()
+                .timestamp(System.currentTimeMillis())
+                .userId(userId)
+                .eventType("LIKE")
+                .operation("REMOVE")
+                .entityId(filmId)
+                .build());
+
         return film;
     }
+
     private Film getFilmOrThrow(Long filmId) {
         Film film = filmStorage.getById(filmId);
         if (film == null) {
