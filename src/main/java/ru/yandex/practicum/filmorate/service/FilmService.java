@@ -9,7 +9,8 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +30,7 @@ public class FilmService {
         filmStorage.update(film);
         return film;
     }
+
     public Film removeLike(Long filmId, Long userId) {
         Film film = getFilmOrThrow(filmId);
         userService.getUserOrThrow(userId);
@@ -39,6 +41,7 @@ public class FilmService {
         logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
         return film;
     }
+
     private Film getFilmOrThrow(Long filmId) {
         Film film = filmStorage.getById(filmId);
         if (film == null) {
