@@ -97,7 +97,8 @@ public class UserController {
     @GetMapping("/{id}/recommendations")
     public List<Film> getRecommendations(@PathVariable Long id) {
         return recommendationService.getRecommendations(id);
-
+    }
+    
     @GetMapping("/{id}/feed")
     public ResponseEntity<List<EventDto>> getUserFeed(@PathVariable Long id) {
         userService.getUserOrThrow(id);
