@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-
 @Repository
 @RequiredArgsConstructor
 public class UserDao implements UserStorage, FriendshipStorage {

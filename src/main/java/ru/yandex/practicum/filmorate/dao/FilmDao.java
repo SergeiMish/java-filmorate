@@ -47,7 +47,7 @@ public class FilmDao implements FilmStorage {
 
         log.debug("Executing SQL: {}", sqlQuery);
         log.debug("With parameters: name={}, description={}, releaseDate={}, duration={}, mpaId={}",
-                  film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa().getId());
+                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa().getId());
 
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"film_id"});
@@ -101,18 +101,18 @@ public class FilmDao implements FilmStorage {
         }
 
         Long mpaId = Optional.ofNullable(film.getMpa())
-                             .map(Mpa::getId)
-                             .orElse(null);
+                .map(Mpa::getId)
+                .orElse(null);
 
         String sqlQuery = "UPDATE Films SET name = ?, " +
                 "description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
         jdbcTemplate.update(sqlQuery,
-                            film.getName(),
-                            film.getDescription(),
-                            film.getReleaseDate(),
-                            film.getDuration(),
-                            mpaId,
-                            film.getId());
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                mpaId,
+                film.getId());
 
         return film;
     }
@@ -154,27 +154,27 @@ public class FilmDao implements FilmStorage {
                 while (rs.next()) {
                     if (film == null) {
                         Mpa mpa = Mpa.builder()
-                                     .id(rs.getLong("mpa_id"))
-                                     .name(rs.getString("name"))
-                                     .build();
+                                .id(rs.getLong("mpa_id"))
+                                .name(rs.getString("name"))
+                                .build();
 
                         film = Film.builder()
-                                   .id(rs.getLong("film_id"))
-                                   .name(rs.getString("name"))
-                                   .description(rs.getString("description"))
-                                   .releaseDate(rs.getDate("release_date").toLocalDate())
-                                   .duration(rs.getInt("duration"))
-                                   .mpa(mpa)
-                                   .likes(new HashSet<>())
-                                   .genres(new ArrayList<>())
-                                   .build();
+                                .id(rs.getLong("film_id"))
+                                .name(rs.getString("name"))
+                                .description(rs.getString("description"))
+                                .releaseDate(rs.getDate("release_date").toLocalDate())
+                                .duration(rs.getInt("duration"))
+                                .mpa(mpa)
+                                .likes(new HashSet<>())
+                                .genres(new ArrayList<>())
+                                .build();
                     }
                     Long genreId = rs.getLong("genre_id");
                     if (genreId != null && genreId > 0) {
                         Genre genre = Genre.builder()
-                                           .id(genreId)
-                                           .name(rs.getString("name"))
-                                           .build();
+                                .id(genreId)
+                                .name(rs.getString("name"))
+                                .build();
                         genreSet.add(genre);
                     }
                 }
@@ -220,9 +220,9 @@ public class FilmDao implements FilmStorage {
         return rows.stream().collect(Collectors.groupingBy(
                 row -> (Long) row.get("film_id"),
                 Collectors.mapping(row -> Genre.builder()
-                                               .id((Long) row.get("genre_id"))
-                                               .name((String) row.get("name"))
-                                               .build(), Collectors.toList())
+                        .id((Long) row.get("genre_id"))
+                        .name((String) row.get("name"))
+                        .build(), Collectors.toList())
         ));
     }
 
@@ -241,7 +241,7 @@ public class FilmDao implements FilmStorage {
     private void validateGenresExist(Collection<Genre> genres) {
         Set<Long> genreIds = genres.stream().map(Genre::getId).collect(Collectors.toSet());
         String sqlQuery = String.format("SELECT genre_id FROM Genres WHERE genre_id IN (%s)",
-                                        genreIds.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+                genreIds.stream().map(String::valueOf).collect(Collectors.joining(", ")));
 
         List<Long> existingIds = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> rs.getLong("genre_id"));
 

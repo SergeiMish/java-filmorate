@@ -56,6 +56,7 @@ public class FilmService {
         filmStorage.update(film);
         return film;
     }
+
     public Film removeLike(Long filmId, Long userId) {
         Film film = getFilmOrThrow(filmId);
         userService.getUserOrThrow(userId);
@@ -66,6 +67,7 @@ public class FilmService {
         logger.info("Лайк удален пользователем {} от фильма {}", userId, filmId);
         return film;
     }
+
     private Film getFilmOrThrow(Long filmId) {
         Film film = filmStorage.getById(filmId);
         if (film == null) {
