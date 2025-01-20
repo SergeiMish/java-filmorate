@@ -12,6 +12,8 @@ DELETE
 FROM MpaRatings;
 DELETE
 FROM Users;
+DELETE
+FROM Events;
 
 INSERT INTO Genres (genre_id, name)
 VALUES (1, 'Комедия');

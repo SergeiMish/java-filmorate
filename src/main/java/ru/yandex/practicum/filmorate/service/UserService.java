@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserStorage userStorage;
     private final FriendshipStorage friendshipStorage;
+    private final EventStorage eventStorage;
 
     public User addFriend(Long user1Id, Long user2Id) {
         if (Objects.equals(user1Id, user2Id)) {
@@ -32,6 +35,15 @@ public class UserService {
 
         if (!friendshipStorage.isFriendshipExists(user1Id, user2Id)) {
             friendshipStorage.addFriend(user1Id, user2Id);
+
+            eventStorage.addEvent(Event.builder()
+                    .timestamp(System.currentTimeMillis())
+                    .userId(user1Id)
+                    .eventType("FRIEND")
+                    .operation("ADD")
+                    .entityId(user2Id)
+                    .build());
+
             log.info("Пользователь с id = {} добавил в друзья пользователя с id = {}", user1Id, user2Id);
         } else {
             log.info("Пользователь с id = {} уже является другом пользователя с id = {}", user1Id, user2Id);
@@ -45,6 +57,14 @@ public class UserService {
         getUserOrThrow(friendId);
 
         friendshipStorage.removeFriend(id, friendId);
+
+        eventStorage.addEvent(Event.builder()
+                .timestamp(System.currentTimeMillis())
+                .userId(id)
+                .eventType("FRIEND")
+                .operation("REMOVE")
+                .entityId(friendId)
+                .build());
 
         log.info("Пользователь с id = {} удалил из друзей пользователя с id = {}", id, friendId);
 
