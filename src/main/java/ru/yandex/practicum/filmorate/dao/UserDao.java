@@ -15,13 +15,16 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 
 @Repository
 @RequiredArgsConstructor
 public class UserDao implements UserStorage, FriendshipStorage {
+
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
 
@@ -56,11 +59,11 @@ public class UserDao implements UserStorage, FriendshipStorage {
                 "email = ?, login = ?, name = ?, birthday = ? " +
                 "WHERE user_id = ?";
         int rowsAffected = jdbcTemplate.update(sqlQuery,
-                user.getEmail(),
-                user.getLogin(),
-                user.getName(),
-                Timestamp.valueOf(user.getBirthday().atStartOfDay()),
-                user.getId()
+                                               user.getEmail(),
+                                               user.getLogin(),
+                                               user.getName(),
+                                               Timestamp.valueOf(user.getBirthday().atStartOfDay()),
+                                               user.getId()
         );
 
         if (rowsAffected == 0) {
@@ -84,6 +87,18 @@ public class UserDao implements UserStorage, FriendshipStorage {
     public Collection<User> getAll() {
         String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users ORDER BY user_id ASC";
         return jdbcTemplate.query(sqlQuery, userRowMapper);
+    }
+
+    @Override
+    public Set<Long> getLikedFilmsByUserId(Long userId) {
+        String sqlQuery = "SELECT film_id FROM Likes WHERE user_id = ?";
+        try {
+            List<Long> filmIds = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> rs.getLong("film_id"), userId);
+            return new HashSet<>(filmIds);
+        } catch (EmptyResultDataAccessException e) {
+            // Если нет лайков, возвращаем пустой набор
+            return new HashSet<>();
+        }
     }
 
     public void addFriend(Long user1Id, Long user2Id) {

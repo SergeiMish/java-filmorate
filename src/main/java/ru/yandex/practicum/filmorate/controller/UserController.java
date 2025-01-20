@@ -10,7 +10,9 @@ import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.dto.mapper.UserDtoMapper;
 import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -27,6 +29,9 @@ public class UserController {
 
     private final UserStorage userStorage;
     private final UserService userService;
+
+    private final RecommendationService recommendationService;
+
     private final EventStorage eventStorage;
 
     @PostMapping
@@ -39,8 +44,8 @@ public class UserController {
     @GetMapping
     public Collection<UserDto> getUsers() {
         return userStorage.getAll().stream()
-                .map(UserDtoMapper::toDto)
-                .collect(Collectors.toList());
+                          .map(UserDtoMapper::toDto)
+                          .collect(Collectors.toList());
     }
 
     @DeleteMapping("/{id}")
@@ -58,15 +63,15 @@ public class UserController {
     @GetMapping("/{id}/friends/common/{otherId}")
     public Set<UserDto> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         return userService.getCommonFriends(id, otherId).stream()
-                .map(UserDtoMapper::toDto)
-                .collect(Collectors.toSet());
+                          .map(UserDtoMapper::toDto)
+                          .collect(Collectors.toSet());
     }
 
     @GetMapping("/{id}/friends")
     public Set<UserDto> getFriends(@PathVariable Long id) {
         return userService.listFriends(id).stream()
-                .map(UserDtoMapper::toDto)
-                .collect(Collectors.toSet());
+                          .map(UserDtoMapper::toDto)
+                          .collect(Collectors.toSet());
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -86,6 +91,12 @@ public class UserController {
         User user = UserDtoMapper.toModel(userDto);
         User updatedUser = userStorage.update(user);
         return ResponseEntity.ok(UserDtoMapper.toDto(updatedUser));
+    }
+
+
+    @GetMapping("/{id}/recommendations")
+    public List<Film> getRecommendations(@PathVariable Long id) {
+        return recommendationService.getRecommendations(id);
     }
 
     @GetMapping("/{id}/feed")

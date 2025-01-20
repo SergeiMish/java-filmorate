@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserStorage userStorage;
     private final FriendshipStorage friendshipStorage;
     private final EventStorage eventStorage;
@@ -84,9 +85,9 @@ public class UserService {
 
         List<Long> friendIds = friendshipStorage.getFriendIds(id);
         Set<User> friends = friendIds.stream()
-                .map(userStorage::getById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+                                     .map(userStorage::getById)
+                                     .filter(Objects::nonNull)
+                                     .collect(Collectors.toSet());
 
         log.debug("User ID: {} has {} friends", id, friends.size());
         return friends;
@@ -100,12 +101,20 @@ public class UserService {
         List<Long> otherUserFriendIds = friendshipStorage.getFriendIds(otherUserId);
 
         Set<Long> commonFriendIds = userFriendIds.stream()
-                .filter(otherUserFriendIds::contains)
-                .collect(Collectors.toSet());
+                                                 .filter(otherUserFriendIds::contains)
+                                                 .collect(Collectors.toSet());
 
         return commonFriendIds.stream()
-                .map(userStorage::getById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+                              .map(userStorage::getById)
+                              .filter(Objects::nonNull)
+                              .collect(Collectors.toSet());
+    }
+
+    public Set<Long> getLikedFilms(Long userId) {
+        User user = userStorage.getById(userId);
+        if (user == null) {
+            throw new NotFoundObjectException("Пользователь с ID " + userId + " не найден.");
+        }
+        return userStorage.getLikedFilmsByUserId(userId);
     }
 }
