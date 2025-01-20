@@ -5,11 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.EventDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.dto.mapper.UserDtoMapper;
 import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
-import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -89,8 +89,9 @@ public class UserController {
     }
 
     @GetMapping("/{id}/feed")
-    public ResponseEntity<List<Event>> getUserFeed(@PathVariable Long id) {
+    public ResponseEntity<List<EventDto>> getUserFeed(@PathVariable Long id) {
         userService.getUserOrThrow(id);
-        return ResponseEntity.ok(eventStorage.getEventsByUserId(id));
+        List<EventDto> events = eventStorage.getEventsByUserId(id);
+        return ResponseEntity.ok(events);
     }
 }
