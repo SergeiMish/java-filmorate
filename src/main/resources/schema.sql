@@ -78,3 +78,12 @@ CREATE TABLE IF NOT EXISTS Likes (
                                      FOREIGN KEY (film_id) REFERENCES Films(film_id),
                                      FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
+
+CREATE TABLE IF NOT EXISTS Events (
+                                      event_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                      timestamp BIGINT NOT NULL,
+                                      user_id BIGINT NOT NULL,
+                                      event_type VARCHAR(50) NOT NULL,
+                                      operation VARCHAR(50) NOT NULL,
+                                      entity_id BIGINT NOT NULL
+);

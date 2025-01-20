@@ -7,11 +7,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.dto.mapper.UserDtoMapper;
+import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ public class UserController {
 
     private final UserStorage userStorage;
     private final UserService userService;
+    private final EventStorage eventStorage;
 
     @PostMapping
     public UserDto postUser(@RequestBody @Valid UserDto userDto) {
@@ -82,5 +86,11 @@ public class UserController {
         User user = UserDtoMapper.toModel(userDto);
         User updatedUser = userStorage.update(user);
         return ResponseEntity.ok(UserDtoMapper.toDto(updatedUser));
+    }
+
+    @GetMapping("/{id}/feed")
+    public ResponseEntity<List<Event>> getUserFeed(@PathVariable Long id) {
+        userService.getUserOrThrow(id);
+        return ResponseEntity.ok(eventStorage.getEventsByUserId(id));
     }
 }
