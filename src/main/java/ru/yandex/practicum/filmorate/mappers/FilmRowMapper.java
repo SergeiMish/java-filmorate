@@ -17,12 +17,12 @@ public class FilmRowMapper implements RowMapper<Film> {
     public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
         Mpa mpa = Mpa.builder()
                 .id(rs.getLong("mpa_id"))
-                .name(rs.getString("name"))
+                .name(rs.getString("mpa_name"))
                 .build();
 
         return Film.builder()
                 .id(rs.getLong("film_id"))
-                .name(rs.getString("name"))
+                .name(rs.getString("film_name"))
                 .description(rs.getString("description"))
                 .releaseDate(rs.getDate("release_date").toLocalDate())
                 .duration(rs.getInt("duration"))

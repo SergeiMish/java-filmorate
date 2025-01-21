@@ -29,12 +29,12 @@ CREATE TABLE IF NOT EXISTS Friendships (
 
 CREATE TABLE IF NOT EXISTS MpaRatings (
                                           mpa_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                          name VARCHAR(255) NOT NULL UNIQUE
+                                          mpa_name VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS Films (
                                      film_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                     name VARCHAR(255) NOT NULL,
+                                     film_name VARCHAR(255) NOT NULL,
                                      description VARCHAR(200) NOT NULL,
                                      release_date DATE NOT NULL,
                                      duration INT NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE ReviewLikes (
 
 CREATE TABLE IF NOT EXISTS Genres (
                         genre_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                        name VARCHAR(50) NOT NULL UNIQUE
+                        genre_name VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS FilmGenres (
