@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dao.DirectorDao;
+import ru.yandex.practicum.filmorate.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
@@ -20,9 +22,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Validated
 @RestController
-@Slf4j
 @RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
@@ -30,21 +32,27 @@ public class FilmController {
     private final FilmStorage filmStorage;
     private final FilmService filmService;
     private final ValidateFilm filmValidator;
+    private final FilmDtoMapper filmDtoMapper;
+    private final DirectorDao directorDao;
 
     @PostMapping
-    public ResponseEntity<FilmDto> postFilm(@RequestBody @Valid FilmDto filmDto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public FilmDto postFilm(@RequestBody @Valid CreateFilmDto filmDto) {
         log.info("Received request to create film: {}", filmDto);
-        Film film = FilmDtoMapper.toModel(filmDto);
+        Film film = FilmDtoMapper.map(filmDto);
         filmValidator.validateFilm(film);
         Film createdFilm = filmStorage.create(film);
         log.info("Film created successfully: {}", createdFilm);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
+        filmService.updateDirectorsForFilm(createdFilm);
+        createdFilm.setDirectors(film.getDirectors());
+        return FilmDtoMapper.toDto(createdFilm);
     }
 
     @GetMapping
     public Collection<FilmDto> getFilms() {
+        List<Film> films = (List<Film>) filmStorage.getAll();
         return filmStorage.getAll().stream()
-                .map(FilmDtoMapper::toDto)
+                .map(model -> filmDtoMapper.toDto(model))
                 .collect(Collectors.toList());
     }
 
@@ -54,6 +62,7 @@ public class FilmController {
         if (film == null) {
             throw new NotFoundObjectException("Фильм с ID " + id + " не найден.");
         }
+        film.setDirectors(filmService.findDirectorsForFilm(id));
         FilmDto filmDto = FilmDtoMapper.toDto(film);
         return ResponseEntity.ok(filmDto);
     }
@@ -66,7 +75,8 @@ public class FilmController {
         }
 
         boolean isDeleted = filmStorage.delete(id);
-        return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        return isDeleted ? ResponseEntity.noContent().build() :
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     @GetMapping("/popular")
@@ -95,8 +105,17 @@ public class FilmController {
     public ResponseEntity<FilmDto> putFilm(@Valid @RequestBody FilmDto filmDto) {
         Film film = FilmDtoMapper.toModel(filmDto);
         filmValidator.validateFilm(film);
+        directorDao.updateDirectorOfFilm(film);
         Film updatedFilm = filmStorage.update(film);
+        filmService.updateDirectorsForFilm(updatedFilm);
+        updatedFilm.setDirectors(film.getDirectors());
         return ResponseEntity.ok(FilmDtoMapper.toDto(updatedFilm));
+    }
+
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<Object> getFilmsByDirector(@PathVariable Integer directorId,
+                                                     @RequestParam(name = "sortBy", required = false) String sortBy) {
+        return filmService.getFilmsByDirectorSorted(directorId, sortBy, filmDtoMapper);
     }
 
     @GetMapping("/common")

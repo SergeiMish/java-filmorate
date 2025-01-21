@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 @Component
 public class FilmRowMapper implements RowMapper<Film> {
@@ -21,13 +22,14 @@ public class FilmRowMapper implements RowMapper<Film> {
 
         return Film.builder()
                 .id(rs.getLong("film_id"))
-                .name(rs.getString("name"))
+                .name(rs.getString("film_name"))
                 .description(rs.getString("description"))
                 .releaseDate(rs.getDate("release_date").toLocalDate())
                 .duration(rs.getInt("duration"))
                 .mpa(mpa)
                 .likes(new HashSet<>())
                 .genres(new ArrayList<>())
+                .directors(new LinkedHashSet<>())
                 .build();
     }
 }

@@ -19,12 +19,12 @@ public class GenreDao {
     }
 
     public List<Genre> getAllGenres() {
-        String sql = "SELECT genre_id, name FROM Genres ORDER BY genre_id";
+        String sql = "SELECT genre_id, genre_name FROM Genres ORDER BY genre_id";
         return jdbcTemplate.query(sql, genreRowMapper);
     }
 
     public Genre getGenreById(Long id) {
-        String sql = "SELECT genre_id, name FROM Genres WHERE genre_id = ?";
+        String sql = "SELECT genre_id, genre_name FROM Genres WHERE genre_id = ?";
         List<Genre> genres = jdbcTemplate.query(sql, new Object[]{id}, genreRowMapper);
         if (genres.isEmpty()) {
             throw new NotFoundObjectException("Не найден жанр с ID : " + id);

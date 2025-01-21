@@ -16,20 +16,22 @@ import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.sort.SortDirectorFilms;
+import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Repository
 @RequiredArgsConstructor
-@Slf4j
 public class FilmDao implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
+    private final SortDirectorFilms sortDirectorFilms;
 
     @Override
     public Film create(Film film) {
@@ -39,7 +41,7 @@ public class FilmDao implements FilmStorage {
             validateGenresExist(film.getGenres());
         }
 
-        String sqlQuery = "INSERT INTO Films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
+        String sqlQuery = "INSERT INTO Films (film_name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         log.debug("Executing SQL: {}", sqlQuery);
@@ -101,7 +103,8 @@ public class FilmDao implements FilmStorage {
                 .map(Mpa::getId)
                 .orElse(null);
 
-        String sqlQuery = "UPDATE Films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
+        String sqlQuery = "UPDATE Films SET film_name = ?, " +
+                "description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
         jdbcTemplate.update(sqlQuery,
                 film.getName(),
                 film.getDescription(),
@@ -115,7 +118,7 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public List<Film> getFilmsByUserId(Long userId) {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
+        String sqlQuery = "SELECT f.film_id, f.film_name, f.description, f.release_date, f.duration, f.mpa_id, m.mpa_name " +
                 "FROM Films f " +
                 "JOIN Likes l ON f.film_id = l.film_id " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
@@ -133,8 +136,9 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Film getById(Long id) {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name, " +
-                "g.genre_id, g.name AS genre_name " +
+        String sqlQuery = "SELECT f.film_id, f.film_name, f.description, " +
+                "f.release_date, f.duration, f.mpa_id, m.mpa_name, " +
+                "g.genre_id, g.genre_name " +
                 "FROM Films f " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
                 "LEFT JOIN FilmGenres fg ON f.film_id = fg.film_id " +
@@ -155,7 +159,7 @@ public class FilmDao implements FilmStorage {
 
                         film = Film.builder()
                                 .id(rs.getLong("film_id"))
-                                .name(rs.getString("name"))
+                                .name(rs.getString("film_name"))
                                 .description(rs.getString("description"))
                                 .releaseDate(rs.getDate("release_date").toLocalDate())
                                 .duration(rs.getInt("duration"))
@@ -189,8 +193,8 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public Collection<Film> getAll() {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, " +
-                "m.name AS mpa_name " +
+        String sqlQuery = "SELECT f.film_id, f.film_name, f.description, f.release_date, f.duration, f.mpa_id, " +
+                "m.mpa_name " +
                 "FROM Films f " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
                 "ORDER BY f.film_id";
@@ -206,7 +210,7 @@ public class FilmDao implements FilmStorage {
     }
 
     private Map<Long, List<Genre>> loadGenresForFilms() {
-        String sqlQuery = "SELECT fg.film_id, g.genre_id, g.name " +
+        String sqlQuery = "SELECT fg.film_id, g.genre_id, g.genre_name " +
                 "FROM FilmGenres fg " +
                 "JOIN Genres g ON fg.genre_id = g.genre_id";
 
@@ -216,7 +220,7 @@ public class FilmDao implements FilmStorage {
                 row -> (Long) row.get("film_id"),
                 Collectors.mapping(row -> Genre.builder()
                         .id((Long) row.get("genre_id"))
-                        .name((String) row.get("name"))
+                        .name((String) row.get("genre_name"))
                         .build(), Collectors.toList())
         ));
     }
@@ -250,5 +254,11 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
         Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, filmId);
         return count != null && count > 0;
+    }
+
+    @Override
+    public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
+        sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
+        return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
     }
 }
