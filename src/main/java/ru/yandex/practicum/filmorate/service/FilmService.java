@@ -13,15 +13,13 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Director;
-
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsByDate;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsByLikes;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.yandex.practicum.filmorate.exeption.ErrorMessages.DIRECTOR_NOT_FOUND;
@@ -50,7 +48,7 @@ public class FilmService {
 
         return films;
     }
-  
+
     private final EventStorage eventStorage;
 
     public Film addLike(Long filmId, Long userId) {
