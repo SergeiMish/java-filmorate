@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.interfaces;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
+import java.util.Set;
 
 public interface UserStorage {
 
@@ -15,5 +16,7 @@ public interface UserStorage {
     User getById(Long id);
 
     Collection<User> getAll();
+
+    Set<Long> getLikedFilmsByUserId(Long userId);
 
 }
