@@ -29,6 +29,9 @@ public class UserDao implements UserStorage, FriendshipStorage {
 
     @Override
     public User create(User user) {
+        if (user.getName() == null || user.getName().trim().isEmpty()) {
+            user.setName(user.getLogin());
+        }
         String sqlQuery = "INSERT INTO users (email, login, name, birthday) " +
                 "VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
