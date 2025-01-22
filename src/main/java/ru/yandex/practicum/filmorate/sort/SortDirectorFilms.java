@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @NoArgsConstructor
 @Component
 public class SortDirectorFilms {
+
     private SortDirectorFilmsStrategy searchStrategy;
 
     public String searchFilms(Integer directorId) {
