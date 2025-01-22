@@ -38,6 +38,10 @@ public class FilmDao implements FilmStorage {
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             validateGenresExist(film.getGenres());
         }
+        if (film.getGenres() != null) {
+            Set<Genre> uniqueGenres = new HashSet<>(film.getGenres());
+            film.setGenres(new ArrayList<>(uniqueGenres));
+        }
 
         String sqlQuery = "INSERT INTO Films (film_name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -89,6 +93,23 @@ public class FilmDao implements FilmStorage {
                 film.getDuration(),
                 mpaId,
                 film.getId());
+
+        String deleteGenresSql = "DELETE FROM FilmGenres WHERE film_id = ?";
+        jdbcTemplate.update(deleteGenresSql, film.getId());
+
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            Set<Long> uniqueGenreIds = new HashSet<>();
+            List<Object[]> batchArgs = new ArrayList<>();
+
+            for (Genre genre : film.getGenres()) {
+                if (uniqueGenreIds.add(genre.getId())) {
+                    batchArgs.add(new Object[]{film.getId(), genre.getId()});
+                }
+            }
+
+            String insertGenresSql = "INSERT INTO FilmGenres (film_id, genre_id) VALUES (?, ?)";
+            jdbcTemplate.batchUpdate(insertGenresSql, batchArgs);
+        }
 
         return film;
     }
