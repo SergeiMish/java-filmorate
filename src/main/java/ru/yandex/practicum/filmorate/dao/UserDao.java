@@ -14,11 +14,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -61,11 +57,11 @@ public class UserDao implements UserStorage, FriendshipStorage {
                 "email = ?, login = ?, name = ?, birthday = ? " +
                 "WHERE user_id = ?";
         int rowsAffected = jdbcTemplate.update(sqlQuery,
-                                               user.getEmail(),
-                                               user.getLogin(),
-                                               user.getName(),
-                                               Timestamp.valueOf(user.getBirthday().atStartOfDay()),
-                                               user.getId()
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                Timestamp.valueOf(user.getBirthday().atStartOfDay()),
+                user.getId()
         );
 
         if (rowsAffected == 0) {

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmDtoMapper {
 
-    private static DirectorDtoMapper directorDtoMapper = new DirectorDtoMapper();
+    private static final DirectorDtoMapper directorDtoMapper = new DirectorDtoMapper();
 
     public static Film map(CreateFilmDto filmDto) {
         return Film.builder()

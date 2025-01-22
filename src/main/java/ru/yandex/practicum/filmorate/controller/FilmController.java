@@ -53,7 +53,7 @@ public class FilmController {
     public Collection<FilmDto> getFilms() {
         List<Film> films = (List<Film>) filmStorage.getAll();
         return filmStorage.getAll().stream()
-                .map(model -> filmDtoMapper.toDto(model))
+                .map(model -> FilmDtoMapper.toDto(model))
                 .collect(Collectors.toList());
     }
 

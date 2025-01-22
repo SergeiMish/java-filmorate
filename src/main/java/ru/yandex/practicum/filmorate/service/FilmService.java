@@ -34,14 +34,20 @@ import static ru.yandex.practicum.filmorate.exeption.ErrorMessages.DIRECTOR_NOT_
 @RequiredArgsConstructor
 public class FilmService {
     private static final Logger logger = LoggerFactory.getLogger(FilmService.class);
-    private final FilmStorage filmStorage;
-    private final UserService userService;
-    private final JdbcTemplate jdbcTemplate;
-    private final DirectorDao directorDao;
     private static final Map<String, SortDirectorFilmsStrategy> SORT_DIRECTOR_FILMS_STRATEGIES = Map.of(
             "year", new SortDirectorFilmsByDate(),
             "likes", new SortDirectorFilmsByLikes()
     );
+    private static final Map<Set<String>, SearchStrategy> SEARCH_FILMS_STRATEGIES = Map.of(
+            Set.of("director"), new SearchByDirector(),
+            Set.of("title"), new SearchByTitle(),
+            Set.of("director", "title"), new SearchByDirectorAndTitle()
+    );
+    private final FilmStorage filmStorage;
+    private final UserService userService;
+    private final JdbcTemplate jdbcTemplate;
+    private final DirectorDao directorDao;
+    private final EventStorage eventStorage;
 
     private List<Film> getFilmsFullData(List<Film> films) {
         List<Long> filmIds = films.stream().map(Film::getId).collect(Collectors.toList());
@@ -53,14 +59,6 @@ public class FilmService {
 
         return films;
     }
-
-    private final EventStorage eventStorage;
-
-    private static final Map<Set<String>, SearchStrategy> SEARCH_FILMS_STRATEGIES = Map.of(
-            Set.of("director"), new SearchByDirector(),
-            Set.of("title"), new SearchByTitle(),
-            Set.of("director", "title"), new SearchByDirectorAndTitle()
-    );
 
     public Film addLike(Long filmId, Long userId) {
         Film film = filmStorage.getById(filmId);
@@ -182,7 +180,7 @@ public class FilmService {
                 return ResponseEntity.notFound().build();
             } else {
                 return ResponseEntity.ok(films.stream()
-                        .map((Film film) -> filmMapper.toDto(film))
+                        .map((Film film) -> FilmDtoMapper.toDto(film))
                         .toList());
             }
         } catch (IllegalArgumentException e) {
