@@ -20,6 +20,7 @@ import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -126,5 +127,10 @@ public class FilmController {
         return filmService.getCommonFilms(userId, friendId).stream()
                 .map(FilmDtoMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @GetMapping("/search")
+    public List<Film> searchFilms(@RequestParam() String query, @RequestParam() Set<String> by) {
+        return filmService.searchFilms(query, by);
     }
 }

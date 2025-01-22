@@ -10,11 +10,16 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.DirectorDao;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.search.SearchByDirector;
+import ru.yandex.practicum.filmorate.search.SearchByDirectorAndTitle;
+import ru.yandex.practicum.filmorate.search.SearchByTitle;
+import ru.yandex.practicum.filmorate.search.SearchStrategy;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsByDate;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsByLikes;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
@@ -50,6 +55,12 @@ public class FilmService {
     }
 
     private final EventStorage eventStorage;
+
+    private static final Map<Set<String>, SearchStrategy> SEARCH_FILMS_STRATEGIES = Map.of(
+            Set.of("director"), new SearchByDirector(),
+            Set.of("title"), new SearchByTitle(),
+            Set.of("director", "title"), new SearchByDirectorAndTitle()
+    );
 
     public Film addLike(Long filmId, Long userId) {
         Film film = filmStorage.getById(filmId);
@@ -181,5 +192,19 @@ public class FilmService {
             log.error(e.getMessage());
             return ResponseEntity.internalServerError().body("Internal Server Error");
         }
+    }
+
+    public List<Film> searchFilms(String query, Set<String> by) {
+        List<Film> foundedFilms;
+        if (by == null || by.isEmpty()) {
+            throw new ValidationException("Передано некорректное число параметров");
+        } else {
+            if (SEARCH_FILMS_STRATEGIES.containsKey(by)) {
+                foundedFilms = filmStorage.searchFilmsBy(query, SEARCH_FILMS_STRATEGIES.get(by));
+            } else {
+                throw new NotFoundObjectException("Неверно указан параметр поиска");
+            }
+        }
+        return getFilmsFullData(foundedFilms);
     }
 }

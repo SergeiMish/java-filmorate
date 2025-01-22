@@ -16,6 +16,8 @@ import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.search.SearchStrategy;
+import ru.yandex.practicum.filmorate.search.SearchingFilms;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilms;
 import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
 
@@ -32,6 +34,7 @@ public class FilmDao implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
     private final SortDirectorFilms sortDirectorFilms;
+    private final SearchingFilms searchingFilms;
 
     @Override
     public Film create(Film film) {
@@ -260,5 +263,11 @@ public class FilmDao implements FilmStorage {
     public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
         sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
         return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
+    }
+
+    @Override
+    public List<Film> searchFilmsBy(String query, SearchStrategy searchStrategy) {
+        searchingFilms.setSearchStrategy(searchStrategy);
+        return jdbcTemplate.query(searchingFilms.searchFilms(query), filmRowMapper);
     }
 }
