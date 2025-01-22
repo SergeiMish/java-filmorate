@@ -24,21 +24,7 @@ public class ReviewDao implements ReviewStorage {
 
     @Override
     public Review create(Review review) {
-        if (review.getUserId() == null) {
-            throw new IllegalArgumentException("User ID cannot be null.");
-        }
-
-        if (!userExists(review.getUserId())) {
-            throw new NotFoundObjectException("User with ID " + review.getUserId() + " does not exist.");
-        }
-
-        if (review.getFilmId() == null) {
-            throw new IllegalArgumentException("Film ID cannot be null.");
-        }
-
-        if (!filmExists(review.getFilmId())) {
-            throw new NotFoundObjectException("Film with ID " + review.getFilmId() + " does not exist.");
-        }
+        validateUserAndFilmExistence(review.getUserId(), review.getFilmId());
 
         String sql = "INSERT INTO Reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -48,10 +34,11 @@ public class ReviewDao implements ReviewStorage {
             ps.setBoolean(2, review.isPositive());
             ps.setLong(3, review.getUserId());
             ps.setLong(4, review.getFilmId());
-            ps.setInt(5, review.getUseful());
+            ps.setInt(5, 0);
             return ps;
         }, keyHolder);
         review.setReviewId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        review.setUseful(0);
         return review;
     }
 
@@ -90,6 +77,10 @@ public class ReviewDao implements ReviewStorage {
 
     @Override
     public void addLike(Long reviewId, Long userId) {
+        if (!reviewExists(reviewId)) {
+            throw new NotFoundObjectException("Review with ID " + reviewId + " does not exist.");
+        }
+
         String sql = "INSERT INTO ReviewLikes (review_id, user_id, is_like) VALUES (?, ?, true)";
         jdbcTemplate.update(sql, reviewId, userId);
         updateUsefulCount(reviewId);
@@ -97,6 +88,10 @@ public class ReviewDao implements ReviewStorage {
 
     @Override
     public void addDislike(Long reviewId, Long userId) {
+        if (!reviewExists(reviewId)) {
+            throw new NotFoundObjectException("Review with ID " + reviewId + " does not exist.");
+        }
+
         String checkSql = "SELECT COUNT(*) FROM ReviewLikes WHERE review_id = ? AND user_id = ?";
         Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, reviewId, userId);
 
@@ -137,5 +132,28 @@ public class ReviewDao implements ReviewStorage {
         String sql = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, new Object[]{filmId}, Integer.class);
         return count != null && count > 0;
+    }
+    private boolean reviewExists(Long reviewId) {
+        String sql = "SELECT COUNT(*) FROM Reviews WHERE review_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
+        return count != null && count > 0;
+    }
+
+    private void validateUserAndFilmExistence(Long userId, Long filmId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null.");
+        }
+
+        if (!userExists(userId)) {
+            throw new NotFoundObjectException("User with ID " + userId + " does not exist.");
+        }
+
+        if (filmId == null) {
+            throw new IllegalArgumentException("Film ID cannot be null.");
+        }
+
+        if (!filmExists(filmId)) {
+            throw new NotFoundObjectException("Film with ID " + filmId + " does not exist.");
+        }
     }
 }
