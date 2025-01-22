@@ -101,29 +101,11 @@ CREATE TABLE IF NOT EXISTS FilmsDirectors (
     PRIMARY KEY (film_id, id)
 );
 
-CREATE TABLE IF NOT EXISTS Events
-(
-    event_id
-    BIGINT
-    PRIMARY
-    KEY
-    AUTO_INCREMENT,
-    timestamp
-    BIGINT
-    NOT
-    NULL,
-    user_id
-    BIGINT
-    NOT
-    NULL,
-    event_type
-    VARCHAR
-(
-    50
-) NOT NULL,
-    operation VARCHAR
-(
-    50
-) NOT NULL,
-    entity_id BIGINT NOT NULL
-    );
+CREATE TABLE IF NOT EXISTS Events (
+    event_id   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    timestamp  BIGINT      NOT NULL,
+    user_id    BIGINT      NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    operation  VARCHAR(50) NOT NULL,
+    entity_id  BIGINT      NOT NULL
+);
