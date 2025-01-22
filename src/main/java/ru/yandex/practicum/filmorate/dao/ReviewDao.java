@@ -28,6 +28,7 @@ public class ReviewDao implements ReviewStorage {
 
         String sql = "INSERT INTO Reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
+
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"review_id"});
             ps.setString(1, review.getContent());
@@ -37,22 +38,32 @@ public class ReviewDao implements ReviewStorage {
             ps.setInt(5, 0);
             return ps;
         }, keyHolder);
+
         review.setReviewId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         review.setUseful(0);
+
         return review;
     }
 
     @Override
     public boolean delete(Long id) {
-        String sql = "DELETE FROM Reviews WHERE review_id = ?";
-        return jdbcTemplate.update(sql, id) > 0;
+        String deleteLikesSql = "DELETE FROM ReviewLikes WHERE review_id = ?";
+        jdbcTemplate.update(deleteLikesSql, id);
+
+        String deleteReviewSql = "DELETE FROM Reviews WHERE review_id = ?";
+        return jdbcTemplate.update(deleteReviewSql, id) > 0;
     }
 
     @Override
     public Review update(Long id, Review review) {
-        String sql = "UPDATE Reviews SET content = ?, is_positive = ?, useful = ? WHERE review_id = ?";
-        jdbcTemplate.update(sql, review.getContent(), review.isPositive(), review.getUseful(), id);
-        return review;
+
+        String sql = "UPDATE Reviews SET content = ?, is_positive = ?, useful = 0 WHERE review_id = ?";
+        jdbcTemplate.update(sql, review.getContent(), review.isPositive(), id);
+
+        String selectSql = "SELECT * FROM Reviews WHERE review_id = ?";
+        Review updatedReview = jdbcTemplate.queryForObject(selectSql, reviewRowMapper, id);
+
+        return updatedReview;
     }
 
     @Override
@@ -68,8 +79,8 @@ public class ReviewDao implements ReviewStorage {
     @Override
     public List<Review> getReviews(Long filmId, int count) {
         String sql = filmId != null ?
-                "SELECT * FROM Reviews WHERE film_id = ? LIMIT ?" :
-                "SELECT * FROM Reviews LIMIT ?";
+                "SELECT * FROM Reviews WHERE film_id = ? ORDER BY useful DESC, review_id LIMIT ?" :
+                "SELECT * FROM Reviews ORDER BY useful DESC, review_id LIMIT ?";
         return filmId != null ?
                 jdbcTemplate.query(sql, reviewRowMapper, filmId, count) :
                 jdbcTemplate.query(sql, reviewRowMapper, count);
