@@ -46,6 +46,10 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "INSERT INTO Films (film_name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
+        log.debug("Executing SQL: {}", sqlQuery);
+        log.debug("With parameters: name={}, description={}, releaseDate={}, duration={}, mpaId={}",
+                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa().getId());
+
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"film_id"});
             stmt.setString(1, film.getName());
@@ -58,16 +62,36 @@ public class FilmDao implements FilmStorage {
 
         film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
 
-        saveFilmGenres(film.getId(), film.getGenres());
-        saveFilmDirectors(film);
+        String insertGenresSql = "INSERT INTO FilmGenres (film_id, genre_id) VALUES (?, ?)";
+        Set<Long> uniqueGenreIds = new HashSet<>();
+        List<Object[]> batchArgs = new ArrayList<>();
+
+        for (Genre genre : film.getGenres()) {
+            if (uniqueGenreIds.add(genre.getId())) {
+                batchArgs.add(new Object[]{film.getId(), genre.getId()});
+            }
+        }
+
+        jdbcTemplate.batchUpdate(insertGenresSql, batchArgs);
+
+        if (film.getLikes() == null) {
+            film.setLikes(new HashSet<>());
+        }
+        if (film.getGenres() == null) {
+            film.setGenres(new ArrayList<>());
+        }
 
         log.info("Film created with ID: {}", film.getId());
+
         return film;
     }
 
     @Override
     public boolean delete(Long id) {
-        String deleteGenresSql = "DELETE FROM Films_directors WHERE film_id = ?";
+        String deleteLikesSql = "DELETE FROM Likes WHERE film_id = ?";
+        jdbcTemplate.update(deleteLikesSql, id);
+
+        String deleteGenresSql = "DELETE FROM FilmGenres WHERE film_id = ?";
         jdbcTemplate.update(deleteGenresSql, id);
 
         String deleteFilmSql = "DELETE FROM Films WHERE film_id = ?";
