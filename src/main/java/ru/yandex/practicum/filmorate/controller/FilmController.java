@@ -78,7 +78,7 @@ public class FilmController {
 
     @GetMapping("/popular")
     public List<FilmDto> getPopularFilms(
-            @RequestParam(value = "limit", defaultValue = "10") @Positive int limit,
+            @RequestParam(value = "count", defaultValue = "10") @Positive int limit,
             @RequestParam(value = "genreId", required = false) Long genreId,
             @RequestParam(value = "year", required = false) Integer year) {
         return filmService.mostPopularFilms(limit, genreId, year).stream()
