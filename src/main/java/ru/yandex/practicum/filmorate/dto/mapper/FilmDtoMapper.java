@@ -25,7 +25,7 @@ public class FilmDtoMapper {
                 .duration(filmDto.getDuration())
                 .genres(filmDto.getGenres() != null ? filmDto.getGenres().stream()
                         .map(GenreDtoMapper::toModel)
-                        .collect(Collectors.toList()) : new ArrayList<>())
+                        .collect(Collectors.toCollection(() -> new ArrayList<>(new HashSet<>()))) : new ArrayList<>())
                 .directors(directorDtoMapper.mapToDirectorList(filmDto.getDirector()))
                 .build();
     }
@@ -40,7 +40,7 @@ public class FilmDtoMapper {
                 .likes(model.getLikes() != null ? new HashSet<>(model.getLikes()) : new HashSet<>())
                 .genres(model.getGenres() != null ? model.getGenres().stream()
                         .map(GenreDtoMapper::toDto)
-                        .collect(Collectors.toList()) : new ArrayList<>())
+                        .collect(Collectors.toCollection(() -> new ArrayList<>(new HashSet<>()))) : new ArrayList<>())
                 .mpa(model.getMpa())
                 .directors(directorDtoMapper.mapToDirectorDtoList(model.getDirectors()))
                 .build();
@@ -56,9 +56,10 @@ public class FilmDtoMapper {
                 .likes(filmDto.getLikes() != null ? new HashSet<>(filmDto.getLikes()) : new HashSet<>())
                 .genres(filmDto.getGenres() != null ? filmDto.getGenres().stream()
                         .map(GenreDtoMapper::toModel)
-                        .collect(Collectors.toList()) : new ArrayList<>())
+                        .collect(Collectors.toCollection(() -> new ArrayList<>(new HashSet<>()))) : new ArrayList<>())
                 .mpa(filmDto.getMpa())
                 .directors(directorDtoMapper.mapToDirectorList(filmDto.getDirectors()))
                 .build();
     }
 }
+
