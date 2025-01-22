@@ -43,8 +43,8 @@ public class UserController {
     @GetMapping
     public Collection<UserDto> getUsers() {
         return userStorage.getAll().stream()
-                          .map(UserDtoMapper::toDto)
-                          .collect(Collectors.toList());
+                .map(UserDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @DeleteMapping("/{id}")
@@ -62,15 +62,15 @@ public class UserController {
     @GetMapping("/{id}/friends/common/{otherId}")
     public Set<UserDto> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         return userService.getCommonFriends(id, otherId).stream()
-                          .map(UserDtoMapper::toDto)
-                          .collect(Collectors.toSet());
+                .map(UserDtoMapper::toDto)
+                .collect(Collectors.toSet());
     }
 
     @GetMapping("/{id}/friends")
     public Set<UserDto> getFriends(@PathVariable Long id) {
         return userService.listFriends(id).stream()
-                          .map(UserDtoMapper::toDto)
-                          .collect(Collectors.toSet());
+                .map(UserDtoMapper::toDto)
+                .collect(Collectors.toSet());
     }
 
     @PutMapping("/{id}/friends/{friendId}")

@@ -27,8 +27,8 @@ public class RecommendationService {
 
         // Найти всех пользователей (кроме текущего)
         List<User> allUsers = userStorage.getAll().stream()
-                                         .filter(u -> u.getId() != userId)
-                                         .collect(Collectors.toList());
+                .filter(u -> u.getId() != userId)
+                .collect(Collectors.toList());
 
         // Найти наиболее похожего пользователя
         User mostSimilarUser = findMostSimilarUser(userLikedFilmIds, allUsers);
@@ -46,8 +46,8 @@ public class RecommendationService {
 
         // Вернуть список фильмов
         return recommendedFilmIds.stream()
-                                 .map(filmDao::getById)
-                                 .collect(Collectors.toList());
+                .map(filmDao::getById)
+                .collect(Collectors.toList());
     }
 
 

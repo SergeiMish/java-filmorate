@@ -133,6 +133,7 @@ public class ReviewDao implements ReviewStorage {
         Integer count = jdbcTemplate.queryForObject(sql, new Object[]{filmId}, Integer.class);
         return count != null && count > 0;
     }
+
     private boolean reviewExists(Long reviewId) {
         String sql = "SELECT COUNT(*) FROM Reviews WHERE review_id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
