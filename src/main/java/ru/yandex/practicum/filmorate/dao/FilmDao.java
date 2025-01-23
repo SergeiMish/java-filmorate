@@ -105,6 +105,7 @@ public class FilmDao implements FilmStorage {
         return jdbcTemplate.update(deleteFilmSql, id) > 0;
     }
 
+    @Override
     public Film update(Film film) {
         if (!filmExists(film.getId())) {
             throw new NotFoundObjectException("Фильм с ID " + film.getId() + " не найден");
@@ -127,14 +128,12 @@ public class FilmDao implements FilmStorage {
         String deleteGenresSql = "DELETE FROM FilmGenres WHERE film_id = ?";
         jdbcTemplate.update(deleteGenresSql, film.getId());
 
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            Set<Long> uniqueGenreIds = new HashSet<>();
-            List<Object[]> batchArgs = new ArrayList<>();
+        film.setGenres(removeDuplicateGenres(film.getGenres()));
 
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            List<Object[]> batchArgs = new ArrayList<>();
             for (Genre genre : film.getGenres()) {
-                if (uniqueGenreIds.add(genre.getId())) {
-                    batchArgs.add(new Object[]{film.getId(), genre.getId()});
-                }
+                batchArgs.add(new Object[]{film.getId(), genre.getId()});
             }
 
             String insertGenresSql = "INSERT INTO FilmGenres (film_id, genre_id) VALUES (?, ?)";
@@ -237,6 +236,18 @@ public class FilmDao implements FilmStorage {
         return films;
     }
 
+    @Override
+    public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
+        sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
+        return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
+    }
+
+    @Override
+    public List<Film> searchFilmsBy(String query, SearchStrategy searchStrategy) {
+        searchingFilms.setSearchStrategy(searchStrategy);
+        return jdbcTemplate.query(searchingFilms.searchFilms(query), filmRowMapper);
+    }
+
     private Map<Long, List<Genre>> loadGenresForFilms() {
         String sqlQuery = "SELECT fg.film_id, g.genre_id, g.genre_name " +
                 "FROM FilmGenres fg " +
@@ -252,7 +263,6 @@ public class FilmDao implements FilmStorage {
                         .build(), Collectors.toList())
         ));
     }
-
 
     private void validateMpaExists(Long mpaId) {
         log.info("Проверка существования mpa_id = {} в таблице MpaRatings", mpaId);
@@ -284,15 +294,16 @@ public class FilmDao implements FilmStorage {
         return count != null && count > 0;
     }
 
-    @Override
-    public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
-        sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
-        return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
-    }
+    private List<Genre> removeDuplicateGenres(List<Genre> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return genres;
+        }
 
-    @Override
-    public List<Film> searchFilmsBy(String query, SearchStrategy searchStrategy) {
-        searchingFilms.setSearchStrategy(searchStrategy);
-        return jdbcTemplate.query(searchingFilms.searchFilms(query), filmRowMapper);
+        Map<Long, Genre> uniqueGenres = new HashMap<>();
+        for (Genre genre : genres) {
+            uniqueGenres.put(genre.getId(), genre);
+        }
+
+        return new ArrayList<>(uniqueGenres.values());
     }
 }
