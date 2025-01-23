@@ -97,6 +97,8 @@ public class FilmDao implements FilmStorage {
         String deleteGenresSql = "DELETE FROM FilmGenres WHERE film_id = ?";
         jdbcTemplate.update(deleteGenresSql, film.getId());
 
+        film.setGenres(removeDuplicateGenres(film.getGenres()));
+
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             Set<Long> uniqueGenreIds = new HashSet<>();
             List<Object[]> batchArgs = new ArrayList<>();
@@ -347,5 +349,18 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
         Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, filmId);
         return count != null && count > 0;
+    }
+
+    private List<Genre> removeDuplicateGenres(List<Genre> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return genres;
+        }
+
+        Map<Long, Genre> uniqueGenres = new HashMap<>();
+        for (Genre genre : genres) {
+            uniqueGenres.put(genre.getId(), genre);
+        }
+
+        return new ArrayList<>(uniqueGenres.values());
     }
 }
