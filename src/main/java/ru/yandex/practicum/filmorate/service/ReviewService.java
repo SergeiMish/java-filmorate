@@ -21,7 +21,7 @@ public class ReviewService {
 
         eventStorage.addEvent(Event.builder()
                 .timestamp(System.currentTimeMillis())
-                .userId(review.getUserId())
+                .userId(createdReview.getUserId())
                 .eventType("REVIEW")
                 .operation("ADD")
                 .entityId(createdReview.getReviewId())
@@ -35,7 +35,7 @@ public class ReviewService {
 
         eventStorage.addEvent(Event.builder()
                 .timestamp(System.currentTimeMillis())
-                .userId(review.getUserId())
+                .userId(updatedReview.getUserId())
                 .eventType("REVIEW")
                 .operation("UPDATE")
                 .entityId(id)
