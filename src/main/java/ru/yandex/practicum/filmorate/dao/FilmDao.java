@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -41,10 +42,6 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "INSERT INTO Films (film_name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        log.debug("Executing SQL: {}", sqlQuery);
-        log.debug("With parameters: name={}, description={}, releaseDate={}, duration={}, mpaId={}",
-                film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa().getId());
-
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"film_id"});
             stmt.setString(1, film.getName());
@@ -57,27 +54,10 @@ public class FilmDao implements FilmStorage {
 
         film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
 
-        String insertGenresSql = "INSERT INTO FilmGenres (film_id, genre_id) VALUES (?, ?)";
-        Set<Long> uniqueGenreIds = new HashSet<>();
-        List<Object[]> batchArgs = new ArrayList<>();
-
-        for (Genre genre : film.getGenres()) {
-            if (uniqueGenreIds.add(genre.getId())) {
-                batchArgs.add(new Object[]{film.getId(), genre.getId()});
-            }
-        }
-
-        jdbcTemplate.batchUpdate(insertGenresSql, batchArgs);
-
-        if (film.getLikes() == null) {
-            film.setLikes(new HashSet<>());
-        }
-        if (film.getGenres() == null) {
-            film.setGenres(new ArrayList<>());
-        }
+        saveFilmGenres(film.getId(), film.getGenres());
+        saveFilmDirectors(film);
 
         log.info("Film created with ID: {}", film.getId());
-
         return film;
     }
 
@@ -208,24 +188,40 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public List<Film> getFilmsByDirector(Long directorId, String sortBy) {
-        String sqlQuery = "SELECT f.id, f.name, f.description, f.releaseDate, f.duration, f.mpa_id " +
-                "FROM film_director f_d " +
-                "LEFT JOIN films f " +
-                " ON f_d.film_id = f.id ";
+        String sqlQuery = "SELECT f.film_id, f.film_name, f.description, f.release_date, f.duration, f.mpa_id, " +
+                "m.mpa_name " +
+                "FROM Films f " +
+                "JOIN FilmDirectors fd ON f.film_id = fd.film_id " +
+                "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
+                "WHERE fd.id = ? ";
 
-        if (sortBy.equals("year")) {
-            sqlQuery += "WHERE director_id = ? " +
-                    "ORDER BY f.releaseDate";
-        } else if (sortBy.equals("likes")) {
-            sqlQuery += " LEFT JOIN (SELECT film_id, COUNT(*) AS likes FROM film_like GROUP BY film_id) f_l " +
-                    " ON f_l.film_id = f.id " +
-                    " WHERE director_id = ? " +
-                    " ORDER BY f_l.likes DESC";
+        if ("year".equals(sortBy)) {
+            sqlQuery += "ORDER BY f.release_date";
+        } else if ("likes".equals(sortBy)) {
+            sqlQuery += "LEFT JOIN (SELECT film_id, COUNT(user_id) AS like_count FROM FilmLikes GROUP BY film_id) fl " +
+                    "ON f.film_id = fl.film_id " +
+                    "ORDER BY fl.like_count DESC";
         } else {
-            throw new ValidationException("Неизвестная сортировка");
+            throw new ValidationException("Некорректное значение сортировки: " + sortBy);
         }
 
-        return jdbcTemplate.query(sqlQuery, filmRowMapper::mapRow, directorId).stream().toList();
+        return jdbcTemplate.query(sqlQuery, filmRowMapper, directorId);
+    }
+
+    private Map<Long, List<Director>> loadDirectorsForFilms() {
+        String sqlQuery = "SELECT fd.film_id, d.id, d.name " +
+                "FROM FilmDirectors fd " +
+                "JOIN Directors d ON fd.id = d.id";
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlQuery);
+
+        return rows.stream().collect(Collectors.groupingBy(
+                row -> (Long) row.get("film_id"),
+                Collectors.mapping(row -> Director.builder()
+                                                  .id((Long) row.get("id"))
+                                                  .name((String) row.get("name"))
+                                                  .build(), Collectors.toList())
+        ));
     }
 
     @Override
@@ -237,7 +233,7 @@ public class FilmDao implements FilmStorage {
             sqlQuery += " LEFT JOIN film_director f_d " +
                     " ON f_d.film_id = f.id " +
                     " LEFT JOIN directors d " +
-                    " ON f_d.director_id = d.id ";
+                    " ON f_d.id = d.id ";
             whereQuery.add(" d.name ilike '%" + query + "%' ");
         }
 
@@ -275,6 +271,32 @@ public class FilmDao implements FilmStorage {
         ));
     }
 
+    private void saveFilmDirectors(Film film) {
+        String deleteDirectorsSql = "DELETE FROM FilmDirectors WHERE film_id = ?";
+        jdbcTemplate.update(deleteDirectorsSql, film.getId());
+
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            String insertDirectorsSql = "INSERT INTO FilmDirectors (film_id, id) VALUES (?, ?)";
+            List<Object[]> batchArgs = film.getDirectors().stream()
+                                           .map(director -> new Object[]{film.getId(), director.getId()})
+                                           .collect(Collectors.toList());
+            jdbcTemplate.batchUpdate(insertDirectorsSql, batchArgs);
+        }
+    }
+
+    private void saveFilmGenres(Long filmId, List<Genre> genres) {
+        String insertGenresSql = "INSERT INTO FilmGenres (film_id, genre_id) VALUES (?, ?)";
+        Set<Long> uniqueGenreIds = new HashSet<>();
+        List<Object[]> batchArgs = new ArrayList<>();
+
+        for (Genre genre : genres) {
+            if (uniqueGenreIds.add(genre.getId())) {
+                batchArgs.add(new Object[]{filmId, genre.getId()});
+            }
+        }
+
+        jdbcTemplate.batchUpdate(insertGenresSql, batchArgs);
+    }
 
     private void validateMpaExists(Long mpaId) {
         log.info("Проверка существования mpa_id = {} в таблице MpaRatings", mpaId);

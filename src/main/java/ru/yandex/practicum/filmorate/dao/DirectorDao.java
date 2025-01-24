@@ -13,10 +13,8 @@ import ru.yandex.practicum.filmorate.interfaces.DirectorStorage;
 import ru.yandex.practicum.filmorate.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
-import java.sql.Timestamp;
 import java.util.*;
 
 @Slf4j
@@ -44,12 +42,11 @@ public class DirectorDao implements DirectorStorage {
     @Override
     @Transactional
     public Director create(Director director) {
-        try {
             String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
             KeyHolder keyHolder = new GeneratedKeyHolder();
 
             jdbcTemplate.update(connection -> {
-                PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"director_id"});
+                PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"id"});
                 stmt.setString(1, director.getName());
                 return stmt;
             }, keyHolder);
@@ -58,14 +55,12 @@ public class DirectorDao implements DirectorStorage {
             director.setId(Optional.ofNullable(keyHolder.getKey()).map(Number::longValue)
                                    .orElseThrow(() -> new RuntimeException("Failed to generate director ID")));
             return director;
-        } catch (Exception e) {
-            log.error("Error while creating director", e);
-            throw new RuntimeException("Error while creating director", e);
-        }
     }
 
+    @Override
     public Director update(Director director) {
-        String sqlQuery = "UPDATE directors SET director_name = ? WHERE director_id = ?";
+        validateDirectorExists(director.getId());
+        String sqlQuery = "UPDATE directors SET name = ? WHERE id = ?";
         int rows = jdbcTemplate.update(sqlQuery, director.getName(), director.getId());
 
         if (rows == 0) {
@@ -75,6 +70,7 @@ public class DirectorDao implements DirectorStorage {
         return director;
     }
 
+    @Override
     public boolean delete(Long id) {
         String sqlQuery = "DELETE FROM directors WHERE id = ?";
         return jdbcTemplate.update(sqlQuery, id) > 0;
@@ -83,7 +79,7 @@ public class DirectorDao implements DirectorStorage {
 
     @Override
     public List<Director> getDirectorsByFilm(Long filmId) {
-        String sqlQuery = "SELECT d.id, d.name FROM film_director f_d INNER JOIN directors d ON f_d.director_id = d.id WHERE f_d.film_id = ? ORDER BY d.id";
+        String sqlQuery = "SELECT d.id, d.name FROM film_director f_d INNER JOIN directors d ON f_d.id = d.id WHERE f_d.film_id = ? ORDER BY d.id";
         return jdbcTemplate.query(sqlQuery, directorRowMapper::mapRow, filmId);
     }
 
@@ -95,7 +91,7 @@ public class DirectorDao implements DirectorStorage {
         jdbcTemplate.update(deleteQuery, film.getId());
 
         // Добавление новых связей
-        String insertQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?)";
+        String insertQuery = "INSERT INTO film_director (film_id, id) VALUES (?, ?)";
         for (Director director : film.getDirectors()) {
             jdbcTemplate.update(insertQuery, film.getId(), director.getId());
         }
@@ -111,7 +107,7 @@ public class DirectorDao implements DirectorStorage {
     @Override
     @Transactional
     public void addDirectorsByFilm(Film film) {
-        String sqlQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?)";
+        String sqlQuery = "INSERT INTO film_director (film_id, id) VALUES (?, ?)";
         for (Director director : film.getDirectors()) {
             jdbcTemplate.update(sqlQuery, film.getId(), director.getId());
         }
@@ -120,7 +116,7 @@ public class DirectorDao implements DirectorStorage {
     @Override
     @Transactional
     public void addDirectorsByFilm(Film film, long filmId) {
-        String sqlQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?)";
+        String sqlQuery = "INSERT INTO film_director (film_id, id) VALUES (?, ?)";
         for (Director director : film.getDirectors()) {
             jdbcTemplate.update(sqlQuery, filmId, director.getId());
         }

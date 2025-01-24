@@ -89,17 +89,17 @@ CREATE TABLE IF NOT EXISTS Likes
                                      FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
-CREATE TABLE IF NOT EXISTS Directors (
-    director_id SERIAL PRIMARY KEY,
-    director_name VARCHAR(255) NOT NULL
+CREATE TABLE IF NOT EXISTS directors (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS Films_directors (
     film_id INTEGER NOT NULL,
-    director_id INTEGER NOT NULL,
+    id INTEGER NOT NULL,
     CONSTRAINT fk_film_id3 FOREIGN KEY (film_id) REFERENCES films (film_id) ON DELETE CASCADE,
-    CONSTRAINT fk_director_id FOREIGN KEY (director_id) REFERENCES directors (director_id) ON DELETE CASCADE,
-    PRIMARY KEY (film_id, director_id)
+    CONSTRAINT fk_id FOREIGN KEY (id) REFERENCES directors (id) ON DELETE CASCADE,
+    PRIMARY KEY (film_id, id)
 );
 
 CREATE TABLE IF NOT EXISTS Events (

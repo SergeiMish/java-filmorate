@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
@@ -36,7 +35,7 @@ public class FilmDto {
     private Set<Long> likes = new HashSet<>();
     private List<GenreDto> genres;
 
-    private List<Director> directors;
+    private List<DirectorDto> directors;
 
     private Mpa mpa;
 }

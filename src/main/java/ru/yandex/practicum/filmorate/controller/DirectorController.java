@@ -53,10 +53,9 @@ public class DirectorController {
         }
 
     // Обновление информации о режиссёре
-    @PutMapping("/{id}")
-    public DirectorDto updateDirector(@PathVariable Long id, @RequestBody @Valid DirectorDto directorDto) {
+    @PutMapping
+    public DirectorDto updateDirector(@RequestBody @Valid DirectorDto directorDto) {
         Director director = DirectorDtoMapper.toEntity(directorDto);
-        director.setId(id);  // Устанавливаем ID из URL в переданный объект
         Director updatedDirector = directorStorage.update(director);
         return DirectorDtoMapper.toDto(updatedDirector);
     }

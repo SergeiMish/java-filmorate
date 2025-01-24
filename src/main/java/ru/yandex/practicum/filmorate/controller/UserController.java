@@ -92,7 +92,6 @@ public class UserController {
         return ResponseEntity.ok(UserDtoMapper.toDto(updatedUser));
     }
 
-
     @GetMapping("/{id}/recommendations")
     public List<Film> getRecommendations(@PathVariable Long id) {
         return recommendationService.getRecommendations(id);
