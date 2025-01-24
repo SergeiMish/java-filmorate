@@ -38,8 +38,19 @@ public class FilmService {
     public Film addLike(Long filmId, Long userId) {
         log.info("Попытка пользователя {} добавить лайк фильму {}", userId, filmId);
 
+        log.info("Попытка пользователя {} добавить лайк фильму {}", userId, filmId);
+
+        String checkLikeSql = "SELECT COUNT(*) FROM Likes WHERE film_id = ? AND user_id = ?";
+        Long likeCount = jdbcTemplate.queryForObject(checkLikeSql, Long.class, filmId, userId);
+
+        if (likeCount != null && likeCount > 0) {
+            return filmStorage.getById(filmId);
+        }
+
         Film film = filmStorage.getById(filmId);
         userService.getUserOrThrow(userId);
+
+        film.getLikes().add(userId);
 
         String sqlQuery = "INSERT INTO Likes (film_id, user_id) VALUES (?, ?)";
         jdbcTemplate.update(sqlQuery, filmId, userId);
