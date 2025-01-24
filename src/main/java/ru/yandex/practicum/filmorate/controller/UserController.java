@@ -67,11 +67,12 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public Set<UserDto> getFriends(@PathVariable Long id) {
+    public List<UserDto> getFriends(@PathVariable Long id) {
         return userService.listFriends(id).stream()
                 .map(UserDtoMapper::toDto)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
+
 
     @PutMapping("/{id}/friends/{friendId}")
     public ResponseEntity<UserDto> addFriends(@PathVariable Long id, @PathVariable Long friendId) {
@@ -91,7 +92,6 @@ public class UserController {
         User updatedUser = userStorage.update(user);
         return ResponseEntity.ok(UserDtoMapper.toDto(updatedUser));
     }
-
 
     @GetMapping("/{id}/recommendations")
     public List<Film> getRecommendations(@PathVariable Long id) {
