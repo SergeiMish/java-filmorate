@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -15,6 +16,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 
 @Slf4j
@@ -79,35 +81,44 @@ public class DirectorDao implements DirectorStorage {
 
     @Override
     public List<Director> getDirectorsByFilm(Long filmId) {
-        String sqlQuery = "SELECT d.id, d.name FROM film_director f_d INNER JOIN directors d ON f_d.id = d.id WHERE f_d.film_id = ? ORDER BY d.id";
-        return jdbcTemplate.query(sqlQuery, directorRowMapper::mapRow, filmId);
+        String sqlQuery = "SELECT d.id, d.name " +
+                "FROM FilmsDirectors f_d " +
+                "LEFT JOIN directors d " +
+                "    ON f_d.director_id = d.id " +
+                "WHERE film_id = ? " +
+                "ORDER BY d.id ";
+
+
+        return jdbcTemplate.query(sqlQuery, directorRowMapper, filmId).stream().toList();
     }
 
     @Override
     @Transactional
     public void updateDirectorsByFilm(Film film) {
-        // Удаление старых связей
-        String deleteQuery = "DELETE FROM film_director WHERE film_id = ?";
-        jdbcTemplate.update(deleteQuery, film.getId());
+        // Удаляем старые связи
+        String deleteDirectorsQuery = "DELETE FROM FilmsDirectors WHERE film_id = ?";
+        jdbcTemplate.update(deleteDirectorsQuery, film.getId());
 
-        // Добавление новых связей
-        String insertQuery = "INSERT INTO film_director (film_id, id) VALUES (?, ?)";
-        for (Director director : film.getDirectors()) {
-            jdbcTemplate.update(insertQuery, film.getId(), director.getId());
+        // Добавляем новые связи
+        String insertDirectorsQuery = "INSERT INTO FilmsDirectors (film_id, director_id) VALUES (?, ?)";
+        if (film.getDirectors() != null) {
+            for (Director director : film.getDirectors()) {
+                jdbcTemplate.update(insertDirectorsQuery, film.getId(), director.getId());
+            }
         }
     }
 
     @Override
     @Transactional
     public void deleteDirectorsByFilm(Film film) {
-        String sqlQuery = "DELETE FROM film_director WHERE film_id = ?";
+        String sqlQuery = "DELETE FROM FilmsDirectors WHERE film_id = ?";
         jdbcTemplate.update(sqlQuery, film.getId());
     }
 
     @Override
     @Transactional
     public void addDirectorsByFilm(Film film) {
-        String sqlQuery = "INSERT INTO film_director (film_id, id) VALUES (?, ?)";
+        String sqlQuery = "INSERT INTO FilmsDirectors (film_id, id) VALUES (?, ?)";
         for (Director director : film.getDirectors()) {
             jdbcTemplate.update(sqlQuery, film.getId(), director.getId());
         }
@@ -116,9 +127,22 @@ public class DirectorDao implements DirectorStorage {
     @Override
     @Transactional
     public void addDirectorsByFilm(Film film, long filmId) {
-        String sqlQuery = "INSERT INTO film_director (film_id, id) VALUES (?, ?)";
-        for (Director director : film.getDirectors()) {
-            jdbcTemplate.update(sqlQuery, filmId, director.getId());
+        if (film.getDirectors() != null) {
+
+            String sqlQuery = "INSERT INTO FilmsDirectors(film_id, director_id) VALUES (?, ?)";
+
+            jdbcTemplate.batchUpdate(sqlQuery, new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
+                    preparedStatement.setLong(1, filmId);
+                    preparedStatement.setLong(2, film.getDirectors().get(i).getId());
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return film.getDirectors().size();
+                }
+            });
         }
     }
 

@@ -63,7 +63,7 @@ public class FilmDao implements FilmStorage {
 
     @Override
     public boolean delete(Long id) {
-        String deleteGenresSql = "DELETE FROM FilmGenres WHERE film_id = ?";
+        String deleteGenresSql = "DELETE FROM Films_directors WHERE film_id = ?";
         jdbcTemplate.update(deleteGenresSql, id);
 
         String deleteFilmSql = "DELETE FROM Films WHERE film_id = ?";
@@ -191,7 +191,7 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "SELECT f.film_id, f.film_name, f.description, f.release_date, f.duration, f.mpa_id, " +
                 "m.mpa_name " +
                 "FROM Films f " +
-                "JOIN FilmDirectors fd ON f.film_id = fd.film_id " +
+                "JOIN FilmsDirectors fd ON f.film_id = fd.film_id " +
                 "JOIN MpaRatings m ON f.mpa_id = m.mpa_id " +
                 "WHERE fd.id = ? ";
 
@@ -210,7 +210,7 @@ public class FilmDao implements FilmStorage {
 
     private Map<Long, List<Director>> loadDirectorsForFilms() {
         String sqlQuery = "SELECT fd.film_id, d.id, d.name " +
-                "FROM FilmDirectors fd " +
+                "FROM FilmsDirectors fd " +
                 "JOIN Directors d ON fd.id = d.id";
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlQuery);
@@ -230,7 +230,7 @@ public class FilmDao implements FilmStorage {
 
         List<String> whereQuery = new ArrayList<>();
         if (by.contains("director")) {
-            sqlQuery += " LEFT JOIN film_director f_d " +
+            sqlQuery += " LEFT JOIN FilmsDirectors f_d " +
                     " ON f_d.film_id = f.id " +
                     " LEFT JOIN directors d " +
                     " ON f_d.id = d.id ";
@@ -272,11 +272,11 @@ public class FilmDao implements FilmStorage {
     }
 
     private void saveFilmDirectors(Film film) {
-        String deleteDirectorsSql = "DELETE FROM FilmDirectors WHERE film_id = ?";
+        String deleteDirectorsSql = "DELETE FROM FilmsDirectors WHERE film_id = ?";
         jdbcTemplate.update(deleteDirectorsSql, film.getId());
 
         if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
-            String insertDirectorsSql = "INSERT INTO FilmDirectors (film_id, id) VALUES (?, ?)";
+            String insertDirectorsSql = "INSERT INTO FilmsDirectors (film_id, id) VALUES (?, ?)";
             List<Object[]> batchArgs = film.getDirectors().stream()
                                            .map(director -> new Object[]{film.getId(), director.getId()})
                                            .collect(Collectors.toList());
