@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class EventDao implements EventStorage {
 
     private final JdbcTemplate jdbcTemplate;
-    private final EventRowMapper eventRowMapper = new EventRowMapper();
+    private final EventRowMapper eventRowMapper;
 
     @Override
     public void addEvent(Event event) {
@@ -33,9 +33,8 @@ public class EventDao implements EventStorage {
 
     @Override
     public List<EventDto> getEventsByUserId(long userId) {
-        String sql = "SELECT * FROM Events WHERE user_id = ? ORDER BY timestamp";
-        EventRowMapper eventRowMapper = new EventRowMapper();
-        List<Event> events = jdbcTemplate.query(sql, eventRowMapper, userId);
+        String sql = "SELECT * FROM Events WHERE user_id = ?";
+        List<Event> events = jdbcTemplate.query(sql, this.eventRowMapper, userId);
         return events.stream()
                 .map(EventDtoMapper::toDto)
                 .collect(Collectors.toList());
