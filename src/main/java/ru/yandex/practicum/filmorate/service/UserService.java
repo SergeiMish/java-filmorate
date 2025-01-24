@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
@@ -90,6 +91,8 @@ public class UserService {
     }
 
     public List<User> listFriends(Long id) {
+        userNotEmpty(id);
+
         String friends = "SELECT * FROM Users " +
                 "WHERE user_id IN (SELECT user2_id from Friendships where user1_id = ?);";
 
@@ -119,5 +122,14 @@ public class UserService {
             throw new NotFoundObjectException("Пользователь с ID " + userId + " не найден.");
         }
         return userStorage.getLikedFilmsByUserId(userId);
+    }
+
+    private void userNotEmpty(Long id) {
+        String sqlQuery = "SELECT * FROM Users WHERE user_id = ?";
+        try {
+            jdbcTemplate.queryForObject(sqlQuery, (rs, rowNum) -> rs.getLong("user_id"), id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NotFoundObjectException("Пользователь с ID " + id + " не найден.");
+        }
     }
 }
