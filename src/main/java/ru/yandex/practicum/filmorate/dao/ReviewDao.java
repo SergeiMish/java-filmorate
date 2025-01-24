@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.ReviewStorage;
 import ru.yandex.practicum.filmorate.mappers.ReviewRowMapper;
 import ru.yandex.practicum.filmorate.model.Review;
@@ -24,6 +25,10 @@ public class ReviewDao implements ReviewStorage {
 
     @Override
     public Review create(Review review) {
+        if (review.getUserId() == null || review.getFilmId() == null || review.getContent() == null) {
+            throw new ValidationException("Отсутствуют обязательные поля: userId, filmId или content");
+        }
+
         validateUserAndFilmExistence(review.getUserId(), review.getFilmId());
 
         String sql = "INSERT INTO Reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, ?)";
@@ -152,20 +157,21 @@ public class ReviewDao implements ReviewStorage {
     }
 
     private void validateUserAndFilmExistence(Long userId, Long filmId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null.");
-        }
+        validateNotNull(userId, "User ID cannot be null.");
+        validateNotNull(filmId, "Film ID cannot be null.");
 
         if (!userExists(userId)) {
             throw new NotFoundObjectException("User with ID " + userId + " does not exist.");
         }
 
-        if (filmId == null) {
-            throw new IllegalArgumentException("Film ID cannot be null.");
-        }
-
         if (!filmExists(filmId)) {
             throw new NotFoundObjectException("Film with ID " + filmId + " does not exist.");
+        }
+    }
+
+    private void validateNotNull(Object value, String errorMessage) {
+        if (value == null) {
+            throw new IllegalArgumentException(errorMessage);
         }
     }
 }
