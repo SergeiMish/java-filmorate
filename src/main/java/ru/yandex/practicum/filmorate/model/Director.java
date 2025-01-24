@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 public class Director {
-    private int id;
+
+    private Long id;
     private String name;
 }

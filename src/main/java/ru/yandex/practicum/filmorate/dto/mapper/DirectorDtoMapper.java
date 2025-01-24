@@ -1,51 +1,23 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.dto.CreateDirectorDto;
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.Director;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 @Component
 public class DirectorDtoMapper {
-    public DirectorDto map(Director director) {
+
+    public static DirectorDto toDto(Director model) {
         return DirectorDto.builder()
-                .id(director.getId())
-                .name(director.getName())
-                .build();
+                          .id(model.getId())
+                          .name(model.getName())
+                          .build();
     }
 
-    public Director map(DirectorDto directorDto) {
+    public static Director toEntity(DirectorDto dto) {
         return Director.builder()
-                .id(directorDto.getId())
-                .name(directorDto.getName())
-                .build();
-    }
-
-    public Director map(CreateDirectorDto directorDto) {
-        return Director.builder()
-                .name(directorDto.getName())
-                .build();
-    }
-
-    public LinkedHashSet<Director> mapToDirectorList(Set<DirectorDto> directorDtos) {
-        if (directorDtos == null) {
-            return new LinkedHashSet<>();
-        }
-        return directorDtos.stream()
-                .map(this::map)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    public LinkedHashSet<DirectorDto> mapToDirectorDtoList(Set<Director> directors) {
-        if (directors == null) {
-            return new LinkedHashSet<>();
-        }
-        return directors.stream()
-                .map(this::map)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                       .id(dto.getId())
+                       .name(dto.getName())
+                       .build();
     }
 }

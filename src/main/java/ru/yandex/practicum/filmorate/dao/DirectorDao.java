@@ -1,26 +1,25 @@
 package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.DirectorStorage;
 import ru.yandex.practicum.filmorate.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static ru.yandex.practicum.filmorate.exeption.ErrorMessages.DIRECTOR_NOT_FOUND;
-
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class DirectorDao implements DirectorStorage {
@@ -28,143 +27,109 @@ public class DirectorDao implements DirectorStorage {
     private final JdbcTemplate jdbcTemplate;
     private final DirectorRowMapper directorRowMapper;
 
-    @Override
-    public List<Director> findAllDirectors() {
-        return jdbcTemplate.query("SELECT * FROM Directors", directorRowMapper);
+    public List<Director> getAll() {
+        String sqlQuery = "SELECT id, name FROM directors";
+        return jdbcTemplate.query(sqlQuery, directorRowMapper);
     }
 
-    @Override
-    public Optional<Director> findDirectorById(int id) {
-        String sql = "SELECT * FROM Directors WHERE director_id = ?";
+    public Director getById(Long id) {
+        String sqlQuery = "SELECT id, name FROM directors WHERE id = ?";
         try {
-            Director director = jdbcTemplate.queryForObject(sql, directorRowMapper, id);
-            return Optional.ofNullable(director);
+            return jdbcTemplate.queryForObject(sqlQuery, directorRowMapper, id);
+        } catch (DataAccessException e) {
+            throw new NotFoundObjectException("Director with id = " + id + " not found.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public Director create(Director director) {
+        try {
+            String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+
+            jdbcTemplate.update(connection -> {
+                PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"director_id"});
+                stmt.setString(1, director.getName());
+                return stmt;
+            }, keyHolder);
+
+            // Генерация id для нового директора
+            director.setId(Optional.ofNullable(keyHolder.getKey()).map(Number::longValue)
+                                   .orElseThrow(() -> new RuntimeException("Failed to generate director ID")));
+            return director;
         } catch (Exception e) {
-            return Optional.empty();
+            log.error("Error while creating director", e);
+            throw new RuntimeException("Error while creating director", e);
         }
     }
 
-    @Override
-    public boolean containsDirector(Integer directorId) {
-        String sql = "SELECT COUNT(*) FROM Directors WHERE director_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, directorId);
-        return count != null && count > 0;
-    }
+    public Director update(Director director) {
+        String sqlQuery = "UPDATE directors SET director_name = ? WHERE director_id = ?";
+        int rows = jdbcTemplate.update(sqlQuery, director.getName(), director.getId());
 
-    @Override
-    public Director createDirector(Director director) {
-        String sql = "INSERT INTO Directors (director_name) VALUES (?)";
-
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, director.getName());
-            return ps;
-        }, keyHolder);
-
-        int generatedId = Objects.requireNonNull(keyHolder.getKey()).intValue();
-        director.setId(generatedId);
+        if (rows == 0) {
+            throw new NotFoundObjectException("Director with id = " + director.getId() + " not found.");
+        }
 
         return director;
     }
 
-    @Override
-    public Director updateDirector(Director director) {
-        String sql = "UPDATE Directors SET director_name = ? WHERE director_id = ?";
-        int rowsAffected = jdbcTemplate.update(sql, director.getName(), director.getId());
+    public boolean delete(Long id) {
+        String sqlQuery = "DELETE FROM directors WHERE id = ?";
+        return jdbcTemplate.update(sqlQuery, id) > 0;
+    }
 
-        if (rowsAffected == 0) {
-            throw new NotFoundObjectException(DIRECTOR_NOT_FOUND + director.getId());
-        }
-        return director;
+
+    @Override
+    public List<Director> getDirectorsByFilm(Long filmId) {
+        String sqlQuery = "SELECT d.id, d.name FROM film_director f_d INNER JOIN directors d ON f_d.director_id = d.id WHERE f_d.film_id = ? ORDER BY d.id";
+        return jdbcTemplate.query(sqlQuery, directorRowMapper::mapRow, filmId);
     }
 
     @Override
-    public void deleteDirector(int id) {
-        String sql = "DELETE FROM Directors WHERE director_id = ?";
-        jdbcTemplate.update(sql, id);
-    }
+    @Transactional
+    public void updateDirectorsByFilm(Film film) {
+        // Удаление старых связей
+        String deleteQuery = "DELETE FROM film_director WHERE film_id = ?";
+        jdbcTemplate.update(deleteQuery, film.getId());
 
-    @Override
-    public void updateDirectorOfFilm(Film film) {
-        String removeFilmDirector = "DELETE FROM Films_directors where film_id = ?";
-        jdbcTemplate.update(removeFilmDirector, film.getId());
-
-        String addFilmDirector = "MERGE INTO Films_directors (film_id, director_id) VALUES (?, ?)";
-
-        List<Director> directors = film.getDirectors().stream().toList();
-        film.setDirectors(new LinkedHashSet<>(directors));
-        if (directors.isEmpty()) {
-            return;
-        }
-        checkDirectors(directors);
-
-        Long filmId = film.getId();
-        jdbcTemplate.batchUpdate(addFilmDirector,
-                new BatchPreparedStatementSetter() {
-                    public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        ps.setInt(1, Math.toIntExact(filmId));
-                        ps.setInt(2, directors.get(i).getId());
-                    }
-
-                    public int getBatchSize() {
-                        return directors.size();
-                    }
-
-                });
-    }
-
-    private void checkDirectors(List<Director> directors) {
-        List<Integer> directorIds = directors.stream()
-                .map(Director::getId)
-                .toList();
-
-        if (directorIds.isEmpty()) {
-            return;
-        }
-
-        String placeholders = String.join(",", Collections.nCopies(directorIds.size(), "?"));
-
-        String sql = "SELECT COUNT(*) FROM Directors WHERE director_id IN (" + placeholders + ");";
-
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, directorIds.toArray());
-
-        if (count == null || count < directorIds.size()) {
-            throw new ValidationException("Some Directors are not found in the database");
+        // Добавление новых связей
+        String insertQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?)";
+        for (Director director : film.getDirectors()) {
+            jdbcTemplate.update(insertQuery, film.getId(), director.getId());
         }
     }
 
     @Override
-    public List<Director> findDirectorForFilm(Long filmId) {
-        String sql = "SELECT d.director_id, d.director_name " +
-                "FROM Films_directors fd " +
-                "INNER JOIN Directors d " +
-                "ON fd.director_id = d.director_id " +
-                "WHERE fd.film_id = ?";
-
-        return jdbcTemplate.query(sql, directorRowMapper, filmId);
+    @Transactional
+    public void deleteDirectorsByFilm(Film film) {
+        String sqlQuery = "DELETE FROM film_director WHERE film_id = ?";
+        jdbcTemplate.update(sqlQuery, film.getId());
     }
 
     @Override
-    public Map<Long, Set<Director>> loadFilmsDirectors(List<Long> filmIds) {
-        if (filmIds == null || filmIds.isEmpty()) {
-            return Map.of();
+    @Transactional
+    public void addDirectorsByFilm(Film film) {
+        String sqlQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?)";
+        for (Director director : film.getDirectors()) {
+            jdbcTemplate.update(sqlQuery, film.getId(), director.getId());
         }
+    }
 
-        String sql = "SELECT fd.film_id, d.director_id, d.director_name " +
-                "FROM Films_directors fd " +
-                "INNER JOIN Directors d ON fd.director_id = d.director_id " +
-                "WHERE fd.film_id IN (%s)";
+    @Override
+    @Transactional
+    public void addDirectorsByFilm(Film film, long filmId) {
+        String sqlQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?)";
+        for (Director director : film.getDirectors()) {
+            jdbcTemplate.update(sqlQuery, filmId, director.getId());
+        }
+    }
 
-        String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));
-        sql = String.format(sql, placeholders);
-
-        return jdbcTemplate.query(sql, filmIds.toArray(new Object[0]), (rs, rowNum) -> {
-                    Director director = directorRowMapper.mapRow(rs, rowNum);
-                    Long filmId = rs.getLong("film_id");
-                    return Map.entry(filmId, new LinkedHashSet(Set.of(director)));
-                }).stream()
-                .collect(Collectors.groupingBy(Map.Entry::getKey,
-                        Collectors.flatMapping(e -> e.getValue().stream(), Collectors.toCollection(LinkedHashSet::new))));
+    public void validateDirectorExists(Long directorId) {
+        Director director = getById(directorId);  // Получаем директора по ID
+        if (director == null) {  // Если директора с таким ID нет
+            throw new NotFoundObjectException("Директор с ID " + directorId + " не найден.");
+        }
     }
 }

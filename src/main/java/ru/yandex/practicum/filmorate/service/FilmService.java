@@ -4,25 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dao.DirectorDao;
-import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.interfaces.DirectorStorage;
 import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
-import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsByDate;
-import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsByLikes;
-import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static ru.yandex.practicum.filmorate.exeption.ErrorMessages.DIRECTOR_NOT_FOUND;
 
 @Slf4j
 @Service
@@ -32,19 +25,10 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
     private final JdbcTemplate jdbcTemplate;
-    private final DirectorDao directorDao;
-    private static final Map<String, SortDirectorFilmsStrategy> SORT_DIRECTOR_FILMS_STRATEGIES = Map.of(
-            "year", new SortDirectorFilmsByDate(),
-            "likes", new SortDirectorFilmsByLikes()
-    );
+    private final DirectorStorage directorStorage;
 
     private List<Film> getFilmsFullData(List<Film> films) {
         List<Long> filmIds = films.stream().map(Film::getId).collect(Collectors.toList());
-        Map<Long, Set<Director>> filmDirectors = directorDao.loadFilmsDirectors(filmIds);
-
-        films.forEach(film -> {
-            film.setDirectors(new LinkedHashSet<>(filmDirectors.getOrDefault(film.getId(), Set.of())));
-        });
 
         return films;
     }
@@ -127,59 +111,13 @@ public class FilmService {
         return count != null ? count : 0;
     }
 
-    public List<Director> getDirectors() {
-        return directorDao.findAllDirectors();
+    public List<Film> getFilmsByDirectorAndOrByTitle(String query, String by) {
+        return filmStorage.getFilmsByDirectorAndOrByTitle(query, by);
     }
 
-    public Director findDirectorById(int id) {
-        return directorDao.findDirectorById(id).orElseThrow(() -> new NotFoundObjectException(DIRECTOR_NOT_FOUND + id));
+    public List<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        directorStorage.getById(directorId);
+        return filmStorage.getFilmsByDirector(directorId, sortBy);
     }
 
-    public LinkedHashSet<Director> findDirectorsForFilm(Long id) {
-        return new LinkedHashSet<>(directorDao.findDirectorForFilm(id));
-    }
-
-    public Director createDirector(Director director) {
-        return directorDao.createDirector(director);
-    }
-
-    public Director updateDirector(Director director) {
-        return directorDao.updateDirector(director);
-    }
-
-    public void deleteDirector(int id) {
-        directorDao.deleteDirector(id);
-    }
-
-    public void updateDirectorsForFilm(Film film) {
-        directorDao.updateDirectorOfFilm(film);
-    }
-
-    public ResponseEntity<Object> getFilmsByDirectorSorted(int directorId, String sortParam, FilmDtoMapper filmMapper) {
-        try {
-            List<Film> films;
-            if (SORT_DIRECTOR_FILMS_STRATEGIES.containsKey(sortParam)) {
-                films = getFilmsFullData(filmStorage.getFilmsByDirectorSorted(directorId,
-                        SORT_DIRECTOR_FILMS_STRATEGIES.get(sortParam.toLowerCase())));
-            } else {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Invalid sortBy parameter: '" + sortParam +
-                        "'. Allowed values - year, likes");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
-            if (films.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            } else {
-                return ResponseEntity.ok(films.stream()
-                        .map((Film film) -> filmMapper.toDto(film))
-                        .toList());
-            }
-        } catch (IllegalArgumentException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.internalServerError().body("Internal Server Error");
-        }
-    }
 }

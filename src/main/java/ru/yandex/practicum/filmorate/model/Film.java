@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -43,5 +42,5 @@ public class Film {
 
     private Mpa mpa;
 
-    private LinkedHashSet<Director> directors;
+    List<Director> directors;
 }

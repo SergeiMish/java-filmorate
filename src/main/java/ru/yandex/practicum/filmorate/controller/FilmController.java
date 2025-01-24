@@ -33,7 +33,6 @@ public class FilmController {
     private final FilmService filmService;
     private final ValidateFilm filmValidator;
     private final FilmDtoMapper filmDtoMapper;
-    private final DirectorDao directorDao;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -43,7 +42,6 @@ public class FilmController {
         filmValidator.validateFilm(film);
         Film createdFilm = filmStorage.create(film);
         log.info("Film created successfully: {}", createdFilm);
-        filmService.updateDirectorsForFilm(createdFilm);
         createdFilm.setDirectors(film.getDirectors());
         return FilmDtoMapper.toDto(createdFilm);
     }
@@ -62,7 +60,6 @@ public class FilmController {
         if (film == null) {
             throw new NotFoundObjectException("Фильм с ID " + id + " не найден.");
         }
-        film.setDirectors(filmService.findDirectorsForFilm(id));
         FilmDto filmDto = FilmDtoMapper.toDto(film);
         return ResponseEntity.ok(filmDto);
     }
@@ -105,18 +102,23 @@ public class FilmController {
     public ResponseEntity<FilmDto> putFilm(@Valid @RequestBody FilmDto filmDto) {
         Film film = FilmDtoMapper.toModel(filmDto);
         filmValidator.validateFilm(film);
-        directorDao.updateDirectorOfFilm(film);
         Film updatedFilm = filmStorage.update(film);
-        filmService.updateDirectorsForFilm(updatedFilm);
         updatedFilm.setDirectors(film.getDirectors());
         return ResponseEntity.ok(FilmDtoMapper.toDto(updatedFilm));
     }
 
-    @GetMapping("/director/{directorId}")
-    public ResponseEntity<Object> getFilmsByDirector(@PathVariable Integer directorId,
-                                                     @RequestParam(name = "sortBy", required = false) String sortBy) {
-        return filmService.getFilmsByDirectorSorted(directorId, sortBy, filmDtoMapper);
+    @GetMapping("director/{id}")
+    public List<FilmDto> getFilmsByDirector(@PathVariable Long id,
+                                            @RequestParam(defaultValue = "likes") String sortBy) {
+        if (!List.of("likes", "year").contains(sortBy)) {
+            throw new IllegalArgumentException("Некорректное значение sortBy: " + sortBy);
+        }
+        List<Film> films = filmService.getFilmsByDirector(id, sortBy);
+        return films.stream()
+                    .map(FilmDtoMapper::toDto)
+                    .collect(Collectors.toList());
     }
+
 
     @GetMapping("/common")
     public List<FilmDto> getCommonFilms(

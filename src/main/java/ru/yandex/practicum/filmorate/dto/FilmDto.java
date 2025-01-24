@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -19,6 +19,7 @@ import java.util.Set;
 @EqualsAndHashCode
 @Builder
 public class FilmDto {
+
     private long id;
     @NotNull(message = "Название фильма не может быть пустым")
     @NotEmpty(message = "Название фильма не может быть пустым")
@@ -35,7 +36,7 @@ public class FilmDto {
     private Set<Long> likes = new HashSet<>();
     private List<GenreDto> genres;
 
-    private LinkedHashSet<DirectorDto> directors;
+    private List<Director> directors;
 
     private Mpa mpa;
 }

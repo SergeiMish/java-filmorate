@@ -16,8 +16,6 @@ import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.sort.SortDirectorFilms;
-import ru.yandex.practicum.filmorate.sort.SortDirectorFilmsStrategy;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
@@ -31,7 +29,6 @@ public class FilmDao implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
-    private final SortDirectorFilms sortDirectorFilms;
 
     @Override
     public Film create(Film film) {
@@ -209,6 +206,59 @@ public class FilmDao implements FilmStorage {
         return films;
     }
 
+    @Override
+    public List<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        String sqlQuery = "SELECT f.id, f.name, f.description, f.releaseDate, f.duration, f.mpa_id " +
+                "FROM film_director f_d " +
+                "LEFT JOIN films f " +
+                " ON f_d.film_id = f.id ";
+
+        if (sortBy.equals("year")) {
+            sqlQuery += "WHERE director_id = ? " +
+                    "ORDER BY f.releaseDate";
+        } else if (sortBy.equals("likes")) {
+            sqlQuery += " LEFT JOIN (SELECT film_id, COUNT(*) AS likes FROM film_like GROUP BY film_id) f_l " +
+                    " ON f_l.film_id = f.id " +
+                    " WHERE director_id = ? " +
+                    " ORDER BY f_l.likes DESC";
+        } else {
+            throw new ValidationException("Неизвестная сортировка");
+        }
+
+        return jdbcTemplate.query(sqlQuery, filmRowMapper::mapRow, directorId).stream().toList();
+    }
+
+    @Override
+    public List<Film> getFilmsByDirectorAndOrByTitle(String query, String by) {
+        String sqlQuery = "SELECT f.id, f.name, f.description, f.releaseDate, f.duration, f.mpa_id FROM films f";
+
+        List<String> whereQuery = new ArrayList<>();
+        if (by.contains("director")) {
+            sqlQuery += " LEFT JOIN film_director f_d " +
+                    " ON f_d.film_id = f.id " +
+                    " LEFT JOIN directors d " +
+                    " ON f_d.director_id = d.id ";
+            whereQuery.add(" d.name ilike '%" + query + "%' ");
+        }
+
+        if (by.contains("title")) {
+            whereQuery.add(" f.name ilike '%" + query + "%' ");
+        }
+
+        if (whereQuery.isEmpty()) {
+            throw new NotFoundObjectException("Неизвестное значение переменной by = " + by);
+        }
+
+        sqlQuery += " LEFT JOIN ( " +
+                "SELECT film_id, COUNT(user_id) AS likes FROM film_like " +
+                "GROUP BY film_id ) l " +
+                "ON l.film_id = f.id " +
+                "WHERE" + String.join(" or ", whereQuery) +
+                "ORDER BY l.likes DESC ";
+
+        return jdbcTemplate.query(sqlQuery, filmRowMapper::mapRow);
+    }
+
     private Map<Long, List<Genre>> loadGenresForFilms() {
         String sqlQuery = "SELECT fg.film_id, g.genre_id, g.genre_name " +
                 "FROM FilmGenres fg " +
@@ -254,11 +304,5 @@ public class FilmDao implements FilmStorage {
         String sqlQuery = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
         Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, filmId);
         return count != null && count > 0;
-    }
-
-    @Override
-    public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
-        sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
-        return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
     }
 }

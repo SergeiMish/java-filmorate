@@ -5,13 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dto.CreateDirectorDto;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.dto.mapper.DirectorDtoMapper;
+import ru.yandex.practicum.filmorate.interfaces.DirectorStorage;
 import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -19,41 +20,51 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DirectorController {
 
-    private final FilmService service;
-    private final DirectorDtoMapper mapper;
+    private final DirectorStorage directorStorage;
 
+    // Получение всех режиссёров
     @GetMapping
-    public List<DirectorDto> findAllDirectors() {
-        List<Director> directors = service.getDirectors();
-        log.info("Returning list of directors");
-        return directors.stream().map(mapper::map).toList();
+    public Collection<DirectorDto> getAllDirectors() {
+        return directorStorage.getAll().stream()
+                              .map(DirectorDtoMapper::toDto)
+                              .collect(Collectors.toList());
     }
 
+    // Получение режиссёра по ID
     @GetMapping("/{id}")
-    public DirectorDto findDirectorById(@PathVariable int id) {
-        Director director = service.findDirectorById(id);
-        log.info("Director {} is found", id);
-        return mapper.map(director);
+    public DirectorDto getDirectorById(@PathVariable Long id) {
+        Director director = directorStorage.getById(id);
+        return DirectorDtoMapper.toDto(director);
     }
 
+    // Создание нового режиссёра
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public DirectorDto createDirector(@RequestBody @Valid CreateDirectorDto directorDto) {
-        Director directorSaved = service.createDirector(mapper.map(directorDto));
-        log.info("Director {} is created", directorSaved.getId());
-        return mapper.map(directorSaved);
+    public DirectorDto createDirector(@RequestBody @Valid DirectorDto directorDto) {
+        try {
+        Director director = DirectorDtoMapper.toEntity(directorDto);
+        Director createdDirector = directorStorage.create(director);
+        return DirectorDtoMapper.toDto(createdDirector);
+        } catch (Exception e) {
+            // Логируем ошибку и возвращаем подробное сообщение
+            log.error("Error while creating director", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Произошла непредвиденная ошибка.", e);
+        }
+        }
+
+    // Обновление информации о режиссёре
+    @PutMapping("/{id}")
+    public DirectorDto updateDirector(@PathVariable Long id, @RequestBody @Valid DirectorDto directorDto) {
+        Director director = DirectorDtoMapper.toEntity(directorDto);
+        director.setId(id);  // Устанавливаем ID из URL в переданный объект
+        Director updatedDirector = directorStorage.update(director);
+        return DirectorDtoMapper.toDto(updatedDirector);
     }
 
-    @PutMapping
-    public DirectorDto updateDirector(@RequestBody @Valid DirectorDto directorDto) {
-        Director directorSaved = service.updateDirector(mapper.map(directorDto));
-        log.info("Director {} is updated", directorSaved.getId());
-        return mapper.map(directorSaved);
-    }
-
+    // Удаление режиссёра
     @DeleteMapping("/{id}")
-    public void deleteDirector(@PathVariable int id) {
-        service.deleteDirector(id);
-        log.info("Director {} is removed", id);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteDirector(@PathVariable Long id) {
+        directorStorage.delete(id);
     }
 }
