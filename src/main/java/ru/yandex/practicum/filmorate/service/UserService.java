@@ -2,12 +2,14 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.interfaces.EventStorage;
 import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
+import ru.yandex.practicum.filmorate.mappers.UserRowMapper;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -24,6 +26,8 @@ public class UserService {
     private final UserStorage userStorage;
     private final FriendshipStorage friendshipStorage;
     private final EventStorage eventStorage;
+    private final JdbcTemplate jdbcTemplate;
+    private final UserRowMapper userRowMapper;
 
     public User addFriend(Long user1Id, Long user2Id) {
         if (Objects.equals(user1Id, user2Id)) {
@@ -80,17 +84,11 @@ public class UserService {
         return user;
     }
 
-    public Set<User> listFriends(Long id) {
-        getUserOrThrow(id);
+    public List<User> listFriends(Long id) {
+        String friends = "SELECT * FROM Users " +
+                "WHERE user_id IN (SELECT user2_id from Friendships where user1_id = ?);";
 
-        List<Long> friendIds = friendshipStorage.getFriendIds(id);
-        Set<User> friends = friendIds.stream()
-                .map(userStorage::getById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        log.debug("User ID: {} has {} friends", id, friends.size());
-        return friends;
+        return jdbcTemplate.query(friends, userRowMapper, id);
     }
 
     public Set<User> getCommonFriends(Long userId, Long otherUserId) {

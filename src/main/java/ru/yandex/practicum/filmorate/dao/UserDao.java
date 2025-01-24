@@ -28,7 +28,7 @@ public class UserDao implements UserStorage, FriendshipStorage {
         if (user.getName() == null || user.getName().trim().isEmpty()) {
             user.setName(user.getLogin());
         }
-        String sqlQuery = "INSERT INTO users (email, login, name, birthday) " +
+        String sqlQuery = "INSERT INTO Users (email, login, name, birthday) " +
                 "VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -48,12 +48,12 @@ public class UserDao implements UserStorage, FriendshipStorage {
 
     @Override
     public boolean delete(Long id) {
-        String sqlQuery = "DELETE FROM users WHERE user_id = ?";
+        String sqlQuery = "DELETE FROM Users WHERE user_id = ?";
         return jdbcTemplate.update(sqlQuery, id) > 0;
     }
 
     public User update(User user) {
-        String sqlQuery = "UPDATE users SET " +
+        String sqlQuery = "UPDATE Users SET " +
                 "email = ?, login = ?, name = ?, birthday = ? " +
                 "WHERE user_id = ?";
         int rowsAffected = jdbcTemplate.update(sqlQuery,
@@ -73,7 +73,7 @@ public class UserDao implements UserStorage, FriendshipStorage {
 
     @Override
     public User getById(Long id) {
-        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users WHERE user_id = ?";
+        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM Users WHERE user_id = ?";
         try {
             return jdbcTemplate.queryForObject(sqlQuery, userRowMapper, id);
         } catch (EmptyResultDataAccessException e) {
@@ -100,22 +100,22 @@ public class UserDao implements UserStorage, FriendshipStorage {
     }
 
     public void addFriend(Long user1Id, Long user2Id) {
-        String sqlQueryAddFriend = "INSERT INTO friendships(user1_id, user2_id) VALUES (?, ?)";
+        String sqlQueryAddFriend = "INSERT INTO Friendships(user1_id, user2_id) VALUES (?, ?)";
         jdbcTemplate.update(sqlQueryAddFriend, user1Id, user2Id);
     }
 
     public void removeFriend(Long user1Id, Long user2Id) {
-        String sqlQuery = "DELETE FROM friendships WHERE user1_id = ? AND user2_id = ?";
+        String sqlQuery = "DELETE FROM Friendships WHERE user1_id = ? AND user2_id = ?";
         jdbcTemplate.update(sqlQuery, user1Id, user2Id);
     }
 
     public List<Long> getFriendIds(Long userId) {
-        String sqlQueryUser2 = "SELECT user2_id FROM friendships WHERE user1_id = ?";
+        String sqlQueryUser2 = "SELECT user2_id FROM Friendships WHERE user1_id = ?";
         return jdbcTemplate.queryForList(sqlQueryUser2, Long.class, userId);
     }
 
     public boolean isFriendshipExists(Long user1Id, Long user2Id) {
-        String sqlQuery = "SELECT COUNT(*) FROM friendships WHERE user1_id = ? AND user2_id = ?";
+        String sqlQuery = "SELECT COUNT(*) FROM Friendships WHERE user1_id = ? AND user2_id = ?";
         Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, user1Id, user2Id);
         return count != null && count > 0;
     }
