@@ -8,10 +8,10 @@ import lombok.*;
 @EqualsAndHashCode
 @Builder
 public class EventDto {
-    private long eventId;
-    private long timestamp;
-    private long userId;
+    private Long eventId;
+    private Long timestamp;
+    private Long userId;
     private String eventType;
     private String operation;
-    private long entityId;
+    private Long entityId;
 }

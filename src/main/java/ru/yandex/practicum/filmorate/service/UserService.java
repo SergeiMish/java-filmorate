@@ -57,6 +57,11 @@ public class UserService {
         getUserOrThrow(id);
         getUserOrThrow(friendId);
 
+        if (!friendshipStorage.isFriendshipExists(id, friendId)) {
+            log.info("Пользователь с id = {} не является другом пользователя с id = {}", id, friendId);
+            return getUserOrThrow(id);
+        }
+
         friendshipStorage.removeFriend(id, friendId);
 
         eventStorage.addEvent(Event.builder()
