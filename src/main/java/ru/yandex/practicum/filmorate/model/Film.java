@@ -20,27 +20,20 @@ import java.util.Set;
 @Builder
 public class Film {
 
+    List<Director> directors;
     private long id;
-
     @NotNull(message = "Название фильма не может быть пустым")
     @NotEmpty(message = "Название фильма не может быть пустым")
     private String name;
-
     @NotNull(message = "Описание фильма не может быть пустым")
     @NotEmpty(message = "Описание фильма не может быть пустым")
     @Size(max = 200, message = "Описание фильма не может быть больше 200 символов")
     private String description;
-
     @NotNull(message = "Дата релиза не может быть null")
     private LocalDate releaseDate;
-
     @Positive(message = "Продолжительность фильма должна быть положительной")
     private int duration;
-
     private Set<Long> likes;
     private List<Genre> genres;
-
     private Mpa mpa;
-
-    List<Director> directors;
 }
