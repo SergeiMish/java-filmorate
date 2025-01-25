@@ -2,21 +2,19 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
-import ru.yandex.practicum.filmorate.interfaces.EventStorage;
-import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
+import ru.yandex.practicum.filmorate.interfaces.FeedStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
-import ru.yandex.practicum.filmorate.mappers.UserRowMapper;
-import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import static ru.yandex.practicum.filmorate.model.enums.EventType.FRIEND;
+import static ru.yandex.practicum.filmorate.model.enums.Operation.ADD;
+import static ru.yandex.practicum.filmorate.model.enums.Operation.REMOVE;
+import static ru.yandex.practicum.filmorate.utils.ErrorMessages.USER_NOT_FOUND;
 
 @Slf4j
 @Service
@@ -24,100 +22,82 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
-    private final FriendshipStorage friendshipStorage;
-    private final EventStorage eventStorage;
-    private final JdbcTemplate jdbcTemplate;
-    private final UserRowMapper userRowMapper;
+    private final FeedStorage feedStorage;
 
-    public User addFriend(Long user1Id, Long user2Id) {
-        if (Objects.equals(user1Id, user2Id)) {
-            log.error("Нельзя добавить в друзья самого себя");
-            throw new ValidationException("Нельзя добавить в друзья самого себя");
-        }
-
-        User mainUser = getUserOrThrow(user1Id);
-        getUserOrThrow(user2Id);
-
-        if (!friendshipStorage.isFriendshipExists(user1Id, user2Id)) {
-            friendshipStorage.addFriend(user1Id, user2Id);
-
-            eventStorage.addEvent(Event.builder()
-                    .timestamp(System.currentTimeMillis())
-                    .userId(user1Id)
-                    .eventType("FRIEND")
-                    .operation("ADD")
-                    .entityId(user2Id)
-                    .build());
-
-            log.info("Пользователь с id = {} добавил в друзья пользователя с id = {}", user1Id, user2Id);
-        } else {
-            log.info("Пользователь с id = {} уже является другом пользователя с id = {}", user1Id, user2Id);
-        }
-
-        return mainUser;
+    public List<User> getUsers() {
+        return userStorage.findAll();
     }
 
-    public User removeFriend(Long id, Long friendId) {
-        getUserOrThrow(id);
-        getUserOrThrow(friendId);
+    public User getUser(int id) {
+        return userStorage.findById(id).orElseThrow(() -> new NotFoundObjectException(USER_NOT_FOUND + id));
+    }
 
-        if (!friendshipStorage.isFriendshipExists(id, friendId)) {
-            log.info("Пользователь с id = {} не является другом пользователя с id = {}", id, friendId);
-            return getUserOrThrow(id);
+    public User create(User user) {
+        setName(user);
+        return userStorage.add(user);
+    }
+
+    public void removeUser(Integer id) {
+        userStorage.removeUser(id);
+    }
+
+    public User updateUser(User newUser) {
+        setName(newUser);
+        userStorage.update(newUser);
+        return newUser;
+    }
+
+    public void addFriend(Integer userId, Integer newFriendId) {
+        if (!userStorage.contains(userId)) {
+            throw new NotFoundObjectException(USER_NOT_FOUND + userId);
+        }
+        if (!userStorage.contains(newFriendId)) {
+            throw new NotFoundObjectException(USER_NOT_FOUND + newFriendId);
+        }
+        userStorage.addFriendship(userId, newFriendId);
+        feedStorage.addFeed(newFriendId, userId, FRIEND, ADD);
+    }
+
+    public void removeFriend(Integer userId, Integer friendId) {
+        List<Integer> userFriends = getUserFriendIds(userId);
+        if (!userStorage.contains(userId)) {
+            throw new NotFoundObjectException("Can't remove friend of non-existing user with id " + userId);
         }
 
-        friendshipStorage.removeFriend(id, friendId);
-
-        eventStorage.addEvent(Event.builder()
-                .timestamp(System.currentTimeMillis())
-                .userId(id)
-                .eventType("FRIEND")
-                .operation("REMOVE")
-                .entityId(friendId)
-                .build());
-
-        log.info("Пользователь с id = {} удалил из друзей пользователя с id = {}", id, friendId);
-
-        return getUserOrThrow(id);
-    }
-
-    public User getUserOrThrow(Long id) {
-        User user = userStorage.getById(id);
-        if (user == null) {
-            throw new NotFoundObjectException("ID " + id + " не найден");
+        if (!userStorage.contains(friendId)) {
+            throw new NotFoundObjectException("Can't remove non-existing friend with id " + friendId);
         }
-        return user;
-    }
 
-    public List<User> listFriends(Long id) {
-        String friends = "SELECT * FROM Users " +
-                "WHERE user_id IN (SELECT user2_id from Friendships where user1_id = ?);";
-
-        return jdbcTemplate.query(friends, userRowMapper, id);
-    }
-
-    public Set<User> getCommonFriends(Long userId, Long otherUserId) {
-        getUserOrThrow(userId);
-        getUserOrThrow(otherUserId);
-
-        List<Long> userFriendIds = friendshipStorage.getFriendIds(userId);
-        List<Long> otherUserFriendIds = friendshipStorage.getFriendIds(otherUserId);
-
-        Set<Long> commonFriendIds = userFriendIds.stream()
-                .filter(otherUserFriendIds::contains)
-                .collect(Collectors.toSet());
-
-        return commonFriendIds.stream()
-                .map(userStorage::getById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-    }
-
-    public Set<Long> getLikedFilms(Long userId) {
-        User user = userStorage.getById(userId);
-        if (user == null) {
-            throw new NotFoundObjectException("Пользователь с ID " + userId + " не найден.");
+        if (!userFriends.contains(friendId)) {
+            return;
         }
-        return userStorage.getLikedFilmsByUserId(userId);
+        userStorage.removeFriendship(userId, friendId);
+        feedStorage.addFeed(friendId, userId, FRIEND, REMOVE);
+    }
+
+    public List<User> getUserFriends(Integer id) {
+        return userStorage.getFriendsbyUserId(id);
+    }
+
+    public List<Integer> getUserFriendIds(Integer id) {
+        return userStorage.getFriendsbyUserId(id).stream()
+                .map(User::getId)
+                .toList();
+    }
+
+    public List<User> getCommonFriends(Integer userId, Integer friendId) {
+        return userStorage.getCommonFriends(userId, friendId);
+    }
+
+    private void setName(User user) {
+        String name = user.getName();
+        if (name == null || name.isBlank()) {
+            user.setName(user.getLogin());
+        }
+    }
+
+    public List<Feed> getFeedByUserId(Integer id) {
+        getUser(id);
+        return feedStorage.getFeedByUserId(id);
     }
 }

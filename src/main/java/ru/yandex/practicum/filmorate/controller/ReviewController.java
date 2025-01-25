@@ -1,84 +1,86 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
+import ru.yandex.practicum.filmorate.dto.create.CreateReviewDto;
 import ru.yandex.practicum.filmorate.dto.mapper.ReviewDtoMapper;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.service.ReviewService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+@Validated
 @RestController
 @RequestMapping("/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
-    private final ReviewService reviewService;
+    private final ReviewService service;
+
+    private final ReviewDtoMapper reviewMapper;
 
     @PostMapping
-    public ResponseEntity<ReviewDto> addReview(@RequestBody @Valid ReviewDto reviewDto) {
-        Review review = ReviewDtoMapper.toModel(reviewDto);
-        Review createdReview = reviewService.addReview(review);
-        return ResponseEntity.ok(ReviewDtoMapper.toDto(createdReview));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ReviewDto create(@Valid @RequestBody CreateReviewDto dto) {
+        Review toCreate = reviewMapper.map(dto);
+        Review createdFilm = service.create(toCreate);
+        return reviewMapper.map(createdFilm);
     }
 
     @PutMapping
-    public ResponseEntity<ReviewDto> updateReview(@RequestBody @Valid ReviewDto reviewDto) {
-        if (reviewDto.getReviewId() == null) {
-            throw new IllegalArgumentException("Review ID cannot be null.");
-        }
-        Review review = ReviewDtoMapper.toModel(reviewDto);
-        Review updatedReview = reviewService.updateReview(reviewDto.getReviewId(), review);
-        return ResponseEntity.ok(ReviewDtoMapper.toDto(updatedReview));
+    public ReviewDto update(@Valid @RequestBody ReviewDto dto) {
+        Review review = reviewMapper.map(dto);
+        Review updatedReview = service.update(review);
+        return reviewMapper.map(updatedReview);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
-        reviewService.deleteReview(id);
-        return ResponseEntity.noContent().build();
+    public void remove(@PathVariable Integer id) {
+        service.remove(id);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReviewDto> getReviewById(@PathVariable Long id) {
-        Review review = reviewService.getReviewById(id);
-        return ResponseEntity.ok(ReviewDtoMapper.toDto(review));
+    public ReviewDto getReview(@PathVariable Integer id) {
+        Review review = service.findById(id);
+        return reviewMapper.map(review);
     }
 
     @GetMapping
-    public ResponseEntity<List<ReviewDto>> getReviews(@RequestParam(required = false) Long filmId,
-                                                      @RequestParam(defaultValue = "10") int count) {
-        List<Review> reviews = reviewService.getReviews(filmId, count);
-        List<ReviewDto> reviewDtos = reviews.stream()
-                .map(ReviewDtoMapper::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(reviewDtos);
+    public List<ReviewDto> getReview(@RequestParam(required = false) Integer filmId,
+                                     @RequestParam(defaultValue = "10") @Positive int count) {
+        List<Review> reviews;
+        if (filmId == null) {
+            reviews = service.findAll();
+        } else {
+            reviews = service.findByFilmId(filmId, count);
+        }
+        return reviews.stream()
+                .map(reviewMapper::map)
+                .toList();
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public ResponseEntity<Void> likeReview(@PathVariable Long id, @PathVariable Long userId) {
-        reviewService.likeReview(id, userId);
-        return ResponseEntity.ok().build();
+    public void like(@PathVariable int id, @PathVariable int userId) {
+        service.addRating(id, userId, true);
     }
 
     @PutMapping("/{id}/dislike/{userId}")
-    public ResponseEntity<Void> dislikeReview(@PathVariable Long id, @PathVariable Long userId) {
-        reviewService.dislikeReview(id, userId);
-        return ResponseEntity.ok().build();
+    public void dislike(@PathVariable int id, @PathVariable int userId) {
+        service.addRating(id, userId, false);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public ResponseEntity<Void> removeLike(@PathVariable Long id, @PathVariable Long userId) {
-        reviewService.removeLike(id, userId);
-        return ResponseEntity.ok().build();
+    public void removeLike(@PathVariable int id, @PathVariable int userId) {
+        service.removeRating(id, userId, true);
     }
 
     @DeleteMapping("/{id}/dislike/{userId}")
-    public ResponseEntity<Void> removeDislike(@PathVariable Long id, @PathVariable Long userId) {
-        reviewService.removeDislike(id, userId);
-        return ResponseEntity.ok().build();
+    public void removeDislike(@PathVariable int id, @PathVariable int userId) {
+        service.removeRating(id, userId, false);
     }
 }

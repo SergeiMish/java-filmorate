@@ -1,39 +1,33 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
+import java.util.LinkedHashSet;
 
 /**
  * Film.
  */
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+
+@Data
 @Builder
 public class Film {
 
-    List<Director> directors;
-    private long id;
-    @NotNull(message = "Название фильма не может быть пустым")
-    @NotEmpty(message = "Название фильма не может быть пустым")
+    private int id;
+
     private String name;
-    @NotNull(message = "Описание фильма не может быть пустым")
-    @NotEmpty(message = "Описание фильма не может быть пустым")
-    @Size(max = 200, message = "Описание фильма не может быть больше 200 символов")
+
     private String description;
-    @NotNull(message = "Дата релиза не может быть null")
-    private LocalDate releaseDate;
-    @Positive(message = "Продолжительность фильма должна быть положительной")
-    private int duration;
-    private Set<Long> likes;
-    private List<Genre> genres;
+
     private Mpa mpa;
+
+    private LocalDate releaseDate;
+
+    private long duration;
+
+    private LinkedHashSet<Genre> genres;
+
+    private LinkedHashSet<Director> directors;
+
 }

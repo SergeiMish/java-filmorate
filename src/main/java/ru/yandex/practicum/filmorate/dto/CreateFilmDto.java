@@ -4,22 +4,18 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import ru.yandex.practicum.filmorate.validator.AfterDate;
 
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
-import java.util.List;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @RequiredArgsConstructor
 public class CreateFilmDto {
 
     @NotBlank(message = "Film name can't be blank")
-    @Size(max = 100, message = "Film name is too long")
     private String name;
 
     @NotBlank
@@ -34,9 +30,9 @@ public class CreateFilmDto {
     private LocalDate releaseDate;
 
     @Positive(message = "Film duration should be positive")
-    private int duration;
+    private long duration;
 
-    private List<GenreDto> genres;
+    private LinkedHashSet<GenreDto> genres;
 
-    private LinkedHashSet<DirectorDto> director;
+    private LinkedHashSet<DirectorDto> directors;
 }

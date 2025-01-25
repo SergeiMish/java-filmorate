@@ -10,10 +10,10 @@ import java.sql.SQLException;
 @Component
 public class DirectorRowMapper implements RowMapper<Director> {
     @Override
-    public Director mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+    public Director mapRow(ResultSet rs, int rowNum) throws SQLException {
         return Director.builder()
-                .id(resultSet.getLong("id"))
-                .name(resultSet.getString("name"))
+                .id(rs.getInt("director_id"))
+                .name(rs.getString("director_name"))
                 .build();
     }
 }

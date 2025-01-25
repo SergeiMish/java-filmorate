@@ -1,37 +1,46 @@
 package ru.yandex.practicum.filmorate.dao;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exeption.MpaNotFoundException;
+import ru.yandex.practicum.filmorate.interfaces.RatingStorage;
 import ru.yandex.practicum.filmorate.mappers.MpaRatingRowMapper;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public class MpaDao {
+@RequiredArgsConstructor
+public class MpaDao implements RatingStorage {
+
     private final JdbcTemplate jdbcTemplate;
-    private final MpaRatingRowMapper mpaRatingRowMapper;
 
-    @Autowired
-    public MpaDao(JdbcTemplate jdbcTemplate, MpaRatingRowMapper mpaRatingRowMapper) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.mpaRatingRowMapper = mpaRatingRowMapper;
+    private final MpaRatingRowMapper ratingRowMapper;
+
+    @Override
+    public List<Mpa> findAllMpaRatings() {
+        String sql = "SELECT * FROM MpaRatings r " +
+                    "ORDER BY r.mpa_id;";
+        return jdbcTemplate.query(sql, ratingRowMapper);
     }
 
-    public List<Mpa> getAllMpaRatings() {
-        String sql = "SELECT * FROM MpaRatings ORDER BY mpa_id";
-        return jdbcTemplate.query(sql, mpaRatingRowMapper);
+    @Override
+    public boolean containsRating(Integer ratingId) {
+        String sql = "SELECT COUNT(*) FROM MpaRatings WHERE mpa_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, ratingId);
+        return count != null && count > 0;
     }
 
-    public Mpa getMpaRatingById(Long id) {
-        String sql = "SELECT * FROM MpaRatings WHERE mpa_id = ?";
+    @Override
+    public Optional<Mpa> findMpaRatingById(int id) {
+        String sqlQuery = "SELECT * FROM MpaRatings WHERE mpa_id = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, mpaRatingRowMapper, id);
+            Mpa rating = jdbcTemplate.queryForObject(sqlQuery, ratingRowMapper, id);
+            return Optional.ofNullable(rating);
         } catch (EmptyResultDataAccessException e) {
-            throw new MpaNotFoundException(id);
+            return Optional.empty();
         }
     }
 }

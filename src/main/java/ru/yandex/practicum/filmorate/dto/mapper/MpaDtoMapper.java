@@ -1,21 +1,23 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
+@Component
 public class MpaDtoMapper {
 
-    public static MpaDto toDto(Mpa model) {
+    public MpaDto map(Mpa mpa) {
         return MpaDto.builder()
-                .id(model.getId())
-                .name(model.getName())
+                .id(mpa.getId())
+                .name(mpa.getName())
                 .build();
     }
 
-    public static Mpa toModel(MpaDto dto) {
+    public Mpa map(MpaDto mpa) {
         return Mpa.builder()
-                .id(dto.getId())
-                .name(dto.getName())
+                .id(mpa.getId())
+                .name(mpa.getName())
                 .build();
     }
 }

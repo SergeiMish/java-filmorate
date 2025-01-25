@@ -1,35 +1,37 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.dao.MpaDao;
 import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.dto.mapper.MpaDtoMapper;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/mpa")
 @RequiredArgsConstructor
 public class MpaController {
-    private final MpaDao mpaDao;
+
+    private final FilmService service;
+
+    private final MpaDtoMapper mapper;
 
     @GetMapping
-    public List<MpaDto> getAllMpaRatings() {
-        return mpaDao.getAllMpaRatings().stream()
-                .map(MpaDtoMapper::toDto)
-                .collect(Collectors.toList());
+    public List<MpaDto> findAllMpa() {
+        List<Mpa> ratings = service.getRatings();
+        return ratings.stream().map(mapper::map).toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MpaDto> getMpaRatingById(@PathVariable Long id) {
-        Mpa mpa = mpaDao.getMpaRatingById(id);
-        return ResponseEntity.ok(MpaDtoMapper.toDto(mpa));
+    public MpaDto findMpa(@PathVariable int id) {
+        Mpa rating = service.findMpaRatingById(id);
+        return mapper.map(rating);
     }
 }

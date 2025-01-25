@@ -2,82 +2,65 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.interfaces.EventStorage;
+import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
+import ru.yandex.practicum.filmorate.interfaces.FeedStorage;
 import ru.yandex.practicum.filmorate.interfaces.ReviewStorage;
-import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.List;
+import java.util.Optional;
+
+import static ru.yandex.practicum.filmorate.model.enums.EventType.REVIEW;
+import static ru.yandex.practicum.filmorate.model.enums.Operation.*;
+import static ru.yandex.practicum.filmorate.utils.ErrorMessages.REVIEW_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
 
     private final ReviewStorage reviewStorage;
-    private final EventStorage eventStorage;
+    private final FeedStorage feedStorage;
+    private final UserStorage userStorage;
 
-    public Review addReview(Review review) {
+    public Review create(Review review) {
         Review createdReview = reviewStorage.create(review);
-
-        eventStorage.addEvent(Event.builder()
-                .timestamp(System.currentTimeMillis())
-                .userId(createdReview.getUserId())
-                .eventType("REVIEW")
-                .operation("ADD")
-                .entityId(createdReview.getReviewId())
-                .build());
-
+        feedStorage.addFeed(createdReview.getReviewId(), createdReview.getUserId(), REVIEW, ADD);
         return createdReview;
     }
 
-    public Review updateReview(Long id, Review review) {
-        Review updatedReview = reviewStorage.update(id, review);
-
-        eventStorage.addEvent(Event.builder()
-                .timestamp(System.currentTimeMillis())
-                .userId(updatedReview.getUserId())
-                .eventType("REVIEW")
-                .operation("UPDATE")
-                .entityId(id)
-                .build());
-
+    public Review update(Review review) {
+        Review updatedReview = reviewStorage.update(review);
+        feedStorage.addFeed(updatedReview.getReviewId(), updatedReview.getUserId(), REVIEW, UPDATE);
         return updatedReview;
     }
 
-    public void deleteReview(Long id) {
-        Review review = reviewStorage.getById(id);
-        reviewStorage.delete(id);
-
-        eventStorage.addEvent(Event.builder()
-                .timestamp(System.currentTimeMillis())
-                .userId(review.getUserId())
-                .eventType("REVIEW")
-                .operation("REMOVE")
-                .entityId(id)
-                .build());
+    public void remove(int id) {
+        Optional<Review> review = reviewStorage.findById(id);
+        if (review.isPresent()) {
+            Integer userId = review.get().getUserId();
+            reviewStorage.delete(id);
+            feedStorage.addFeed(id, userId, REVIEW, REMOVE);
+        }
     }
 
-    public Review getReviewById(Long id) {
-        return reviewStorage.getById(id);
+    public List<Review> findAll() {
+        return reviewStorage.getReviews();
     }
 
-    public List<Review> getReviews(Long filmId, int count) {
-        return reviewStorage.getReviews(filmId, count);
+    public Review findById(int id) {
+        return reviewStorage.findById(id).orElseThrow(() -> new NotFoundObjectException(REVIEW_NOT_FOUND + id));
     }
 
-    public void likeReview(Long reviewId, Long userId) {
-        reviewStorage.addLike(reviewId, userId);
+    public List<Review> findByFilmId(int filmId, int size) {
+        return reviewStorage.findByFilmId(filmId, size);
     }
 
-    public void dislikeReview(Long reviewId, Long userId) {
-        reviewStorage.addDislike(reviewId, userId);
+    public void addRating(int reviewId, int userId, boolean isLike) {
+        reviewStorage.addRating(reviewId, userId, isLike);
     }
 
-    public void removeLike(Long reviewId, Long userId) {
-        reviewStorage.removeLike(reviewId, userId);
-    }
-
-    public void removeDislike(Long reviewId, Long userId) {
-        reviewStorage.removeDislike(reviewId, userId);
+    public void removeRating(int reviewId, int userId, boolean isLike) {
+        reviewStorage.removeRating(reviewId, userId, isLike);
     }
 }

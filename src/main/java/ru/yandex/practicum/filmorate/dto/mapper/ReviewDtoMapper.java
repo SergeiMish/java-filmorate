@@ -1,35 +1,44 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
+import ru.yandex.practicum.filmorate.dto.create.CreateReviewDto;
 import ru.yandex.practicum.filmorate.model.Review;
 
+@Component
 public class ReviewDtoMapper {
 
-    public static ReviewDto toDto(Review review) {
-        if (review == null) {
-            return null;
-        }
-        return ReviewDto.builder()
-                .reviewId(review.getReviewId())
-                .content(review.getContent())
-                .isPositive(review.isPositive())
-                .userId(review.getUserId())
-                .filmId(review.getFilmId())
-                .useful(review.getUseful())
+    public static final int INITIAL_RATING = 0;
+
+    public final Review map(CreateReviewDto dto) {
+        return Review.builder()
+                .filmId(dto.getFilmId())
+                .userId(dto.getUserId())
+                .isPositive(dto.getIsPositive())
+                .useful(INITIAL_RATING)
+                .content(dto.getContent())
                 .build();
     }
 
-    public static Review toModel(ReviewDto reviewDto) {
-        if (reviewDto == null) {
-            return null;
-        }
+    public final Review map(ReviewDto dto) {
         return Review.builder()
-                .reviewId(reviewDto.getReviewId() != null ? reviewDto.getReviewId() : 0L)
-                .content(reviewDto.getContent())
-                .isPositive(reviewDto.getIsPositive())
-                .userId(reviewDto.getUserId())
-                .filmId(reviewDto.getFilmId())
-                .useful(reviewDto.getUseful())
+                .reviewId(dto.getReviewId())
+                .filmId(dto.getFilmId())
+                .userId(dto.getUserId())
+                .isPositive(dto.getIsPositive())
+                .useful(dto.getUseful())
+                .content(dto.getContent())
+                .build();
+    }
+
+    public final ReviewDto map(Review review) {
+        return ReviewDto.builder()
+                .reviewId(review.getReviewId())
+                .filmId(review.getFilmId())
+                .userId(review.getUserId())
+                .isPositive(review.isPositive())
+                .useful(review.getUseful())
+                .content(review.getContent())
                 .build();
     }
 }
