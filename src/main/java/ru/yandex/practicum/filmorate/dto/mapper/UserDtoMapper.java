@@ -1,26 +1,39 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.dto.create.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.User;
 
+@Component
 public class UserDtoMapper {
 
-    public static UserDto toDto(User model) {
-        return UserDto.builder().id(model.getId())
-                .email(model.getEmail())
-                .login(model.getLogin())
-                .name(model.getName())
-                .birthday(model.getBirthday())
+    public final User map(CreateUserDto dto) {
+        return User.builder()
+                .name(dto.getName())
+                .login(dto.getLogin())
+                .email(dto.getEmail())
+                .birthday(dto.getBirthday())
                 .build();
     }
 
-    public static User toModel(UserDto userDto) {
+    public final UserDto map(User user) {
+        return UserDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .login(user.getLogin())
+                .email(user.getEmail())
+                .birthday(user.getBirthday())
+                .build();
+    }
+
+    public final User map(UserDto user) {
         return User.builder()
-                .id(userDto.getId())
-                .email(userDto.getEmail())
-                .login(userDto.getLogin())
-                .name(userDto.getName())
-                .birthday(userDto.getBirthday())
+                .id(user.getId())
+                .name(user.getName())
+                .login(user.getLogin())
+                .email(user.getEmail())
+                .birthday(user.getBirthday())
                 .build();
     }
 }

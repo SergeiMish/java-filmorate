@@ -3,28 +3,27 @@ package ru.yandex.practicum.filmorate.interfaces;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public interface DirectorStorage {
+    List<Director> getAll();
 
-    Collection<Director> getAll();
+    Optional<Director> getById(int id);
 
-    Director getById(Long id);
-
-    Director update(Director director);
+    boolean contains(Integer directorId);
 
     Director create(Director director);
 
-    boolean delete(Long id);
+    Director update(Director director);
 
-    List<Director> getDirectorsByFilm(Long filmId);
+    void delete(int directorId);
 
     void updateDirectorsByFilm(Film film);
 
-    void deleteDirectorsByFilm(Film film);
+    List<Director> getDirectorsByFilm(int filmId);
 
-    void addDirectorsByFilm(Film film);
-
-    void addDirectorsByFilm(Film film, long filmId);
+    Map<Integer, Set<Director>> loadFilmsDirectors(List<Integer> filmIds);
 }

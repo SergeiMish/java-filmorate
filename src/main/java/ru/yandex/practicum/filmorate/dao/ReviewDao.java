@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -15,163 +16,149 @@ import ru.yandex.practicum.filmorate.model.Review;
 import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import static ru.yandex.practicum.filmorate.utils.ErrorMessages.REVIEW_NOT_FOUND;
 
 @Repository
 @RequiredArgsConstructor
 public class ReviewDao implements ReviewStorage {
 
     private final JdbcTemplate jdbcTemplate;
-    private final ReviewRowMapper reviewRowMapper;
+
+    private final ReviewRowMapper rowMapper;
 
     @Override
     public Review create(Review review) {
-        if (review.getUserId() == null || review.getFilmId() == null || review.getContent() == null) {
-            throw new ValidationException("Отсутствуют обязательные поля: userId, filmId или content");
+
+        int userId = review.getUserId();
+        int filmId = review.getFilmId();
+        if (!containsFilm(filmId)) {
+            throw new NotFoundObjectException("Film id " + filmId + " isn't found");
+        }
+        if (!containsUser(userId)) {
+            throw new NotFoundObjectException("User id " + userId + " isn't found");
         }
 
-        validateUserAndFilmExistence(review.getUserId(), review.getFilmId());
+        String addFilmSql = "INSERT INTO Reviews (film_id, user_id, is_positive, content) " +
+                "VALUES (?, ?, ?, ?)";
 
-        String sql = "INSERT INTO Reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"review_id"});
-            ps.setString(1, review.getContent());
-            ps.setBoolean(2, review.isPositive());
-            ps.setLong(3, review.getUserId());
-            ps.setLong(4, review.getFilmId());
-            ps.setInt(5, 0);
-            return ps;
-        }, keyHolder);
-
-        review.setReviewId(Objects.requireNonNull(keyHolder.getKey()).longValue());
-        review.setUseful(0);
-
-        return review;
-    }
-
-    @Override
-    public boolean delete(Long id) {
-        String deleteLikesSql = "DELETE FROM ReviewLikes WHERE review_id = ?";
-        jdbcTemplate.update(deleteLikesSql, id);
-
-        String deleteReviewSql = "DELETE FROM Reviews WHERE review_id = ?";
-        return jdbcTemplate.update(deleteReviewSql, id) > 0;
-    }
-
-    @Override
-    public Review update(Long id, Review review) {
-
-        String sql = "UPDATE Reviews SET content = ?, is_positive = ?, useful = 0 WHERE review_id = ?";
-        jdbcTemplate.update(sql, review.getContent(), review.isPositive(), id);
-
-        String selectSql = "SELECT * FROM Reviews WHERE review_id = ?";
-        Review updatedReview = jdbcTemplate.queryForObject(selectSql, reviewRowMapper, id);
-
-        return updatedReview;
-    }
-
-    @Override
-    public Review getById(Long id) {
-        String sql = "SELECT * FROM Reviews WHERE review_id = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, reviewRowMapper, id);
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(addFilmSql, new String[]{"REVIEW_ID"});
+                ps.setInt(1, filmId);
+                ps.setInt(2, userId);
+                ps.setBoolean(3, review.isPositive());
+                ps.setString(4, review.getContent());
+
+                return ps;
+            }, keyHolder);
+
+            review.setReviewId(Objects.requireNonNull(keyHolder.getKey()).intValue());
+            return review;
+        } catch (DataIntegrityViolationException e) {
+            throw new NotFoundObjectException(e.getMessage());
+        }
+    }
+
+    @Override
+    public Review update(Review newReview) {
+        String sql = "UPDATE Reviews SET " +
+                "is_positive = ?, content = ? " +
+                "WHERE review_id = ?";
+
+        int rowsAffected = jdbcTemplate.update(sql,
+                newReview.isPositive(),
+                newReview.getContent(),
+                newReview.getReviewId());
+
+        if (rowsAffected == 0) {
+            throw new NotFoundObjectException(REVIEW_NOT_FOUND + newReview.getReviewId());
+        }
+        return getById(newReview.getReviewId()).stream().findFirst().orElse(null);
+    }
+
+    @Override
+    public void delete(int id) {
+        String sql = "DELETE FROM Reviews WHERE review_id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
+    @Override
+    public void removeAll() {
+        String sql = "DELETE FROM Reviews";
+
+        jdbcTemplate.update(sql);
+    }
+
+    @Override
+    public List<Review> getReviews() {
+        String sql = "SELECT r.*, COALESCE(SUM(rl.is_like), 0) as useful " +
+                "FROM Reviews r " +
+                "LEFT JOIN ReviewLikes rl ON r.review_id = rl.review_id " +
+                "GROUP BY r.review_id ORDER BY useful DESC";
+        return jdbcTemplate.query(sql, rowMapper);
+    }
+
+    @Override
+    public Optional<Review> getById(int id) {
+        try {
+            String sql = "SELECT r.*, COALESCE(SUM(rl.is_like), 0) as useful " +
+                    "FROM Reviews r " +
+                    "LEFT JOIN ReviewLikes rl ON r.review_id = rl.review_id " +
+                    "WHERE r.review_id = ? " +
+                    "GROUP BY rl.review_id";
+            Review review = jdbcTemplate.queryForObject(sql, rowMapper, id);
+            return Optional.of(review);
         } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundObjectException("Review not found with id: " + id);
+            return Optional.empty();
         }
     }
 
     @Override
-    public List<Review> getReviews(Long filmId, int count) {
-        String sql = filmId != null ?
-                "SELECT * FROM Reviews WHERE film_id = ? ORDER BY useful DESC, review_id LIMIT ?" :
-                "SELECT * FROM Reviews ORDER BY useful DESC, review_id LIMIT ?";
-        return filmId != null ?
-                jdbcTemplate.query(sql, reviewRowMapper, filmId, count) :
-                jdbcTemplate.query(sql, reviewRowMapper, count);
+    public List<Review> findByFilmId(int filmId, int size) {
+        String sql = "SELECT r.*, COALESCE(SUM(rl.is_like), 0) as useful " +
+                "FROM Reviews r " +
+                "LEFT JOIN ReviewLikes rl ON r.review_id = rl.review_id " +
+                "WHERE r.film_id = ? " +
+                "GROUP BY r.review_id " +
+                "ORDER BY useful DESC LIMIT ?";
+        return jdbcTemplate.query(sql, rowMapper, filmId, size);
     }
 
     @Override
-    public void addLike(Long reviewId, Long userId) {
-        if (!reviewExists(reviewId)) {
-            throw new NotFoundObjectException("Review with ID " + reviewId + " does not exist.");
+    public void addRating(int reviewId, int userId, boolean isLike) {
+        String sql = "MERGE INTO ReviewLikes (review_id, user_id, is_like) VALUES (?, ?, ?)";
+        try {
+            jdbcTemplate.update(sql, reviewId, userId, isLike ? 1 : -1);
+        } catch (DataIntegrityViolationException e) {
+            throw new ValidationException(e.getMessage());
         }
-
-        String sql = "INSERT INTO ReviewLikes (review_id, user_id, is_like) VALUES (?, ?, true)";
-        jdbcTemplate.update(sql, reviewId, userId);
-        updateUsefulCount(reviewId);
     }
 
     @Override
-    public void addDislike(Long reviewId, Long userId) {
-        if (!reviewExists(reviewId)) {
-            throw new NotFoundObjectException("Review with ID " + reviewId + " does not exist.");
+    public void deleteRating(int reviewId, int userId, boolean isLike) {
+        String sql = "DELETE FROM ReviewLikes WHERE review_id = ? AND user_id = ?";
+        try {
+            jdbcTemplate.update(sql, reviewId, userId);
+        } catch (DataIntegrityViolationException e) {
+            throw new ValidationException(e.getMessage());
         }
 
-        String checkSql = "SELECT COUNT(*) FROM ReviewLikes WHERE review_id = ? AND user_id = ?";
-        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, reviewId, userId);
-
-        if (count != null && count > 0) {
-            String updateSql = "UPDATE ReviewLikes SET is_like = false WHERE review_id = ? AND user_id = ?";
-            jdbcTemplate.update(updateSql, reviewId, userId);
-        } else {
-            String insertSql = "INSERT INTO ReviewLikes (review_id, user_id, is_like) VALUES (?, ?, false)";
-            jdbcTemplate.update(insertSql, reviewId, userId);
-        }
-        updateUsefulCount(reviewId);
     }
 
-    public void removeLike(Long reviewId, Long userId) {
-        String sql = "DELETE FROM ReviewLikes WHERE review_id = ? AND user_id = ? AND is_like = true";
-        jdbcTemplate.update(sql, reviewId, userId);
-        updateUsefulCount(reviewId);
-    }
-
-    private void updateUsefulCount(Long reviewId) {
-        String sql = "UPDATE Reviews SET useful = (SELECT SUM(CASE WHEN is_like THEN 1 ELSE -1 END) FROM ReviewLikes WHERE review_id = ?) WHERE review_id = ?";
-        jdbcTemplate.update(sql, reviewId, reviewId);
-    }
-
-    @Override
-    public void removeDislike(Long reviewId, Long userId) {
-        String sql = "DELETE FROM ReviewLikes WHERE review_id = ? AND user_id = ? AND is_like = false";
-        jdbcTemplate.update(sql, reviewId, userId);
-    }
-
-    public boolean userExists(Long userId) {
+    public boolean containsUser(Integer userId) {
         String sql = "SELECT COUNT(*) FROM Users WHERE user_id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId);
         return count != null && count > 0;
     }
 
-    public boolean filmExists(Long filmId) {
+    public boolean containsFilm(Integer filmId) {
         String sql = "SELECT COUNT(*) FROM Films WHERE film_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, new Object[]{filmId}, Integer.class);
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, filmId);
         return count != null && count > 0;
     }
 
-    private boolean reviewExists(Long reviewId) {
-        String sql = "SELECT COUNT(*) FROM Reviews WHERE review_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
-        return count != null && count > 0;
-    }
-
-    private void validateUserAndFilmExistence(Long userId, Long filmId) {
-        validateNotNull(userId, "User ID cannot be null.");
-        validateNotNull(filmId, "Film ID cannot be null.");
-
-        if (!userExists(userId)) {
-            throw new NotFoundObjectException("User with ID " + userId + " does not exist.");
-        }
-
-        if (!filmExists(filmId)) {
-            throw new NotFoundObjectException("Film with ID " + filmId + " does not exist.");
-        }
-    }
-
-    private void validateNotNull(Object value, String errorMessage) {
-        if (value == null) {
-            throw new IllegalArgumentException(errorMessage);
-        }
-    }
 }

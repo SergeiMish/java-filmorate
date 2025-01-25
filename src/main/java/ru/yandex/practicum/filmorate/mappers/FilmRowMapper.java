@@ -7,28 +7,26 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 @Component
 public class FilmRowMapper implements RowMapper<Film> {
     @Override
-    public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
-        Mpa mpa = Mpa.builder()
-                .id(rs.getLong("mpa_id"))
-                .name(rs.getString("mpa_name"))
+    public Film mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+        Mpa rating = Mpa.builder()
+                .id(resultSet.getInt("mpa_id"))
+                .name(resultSet.getString("mpa_name"))
                 .build();
 
         return Film.builder()
-                .id(rs.getLong("film_id"))
-                .name(rs.getString("film_name"))
-                .description(rs.getString("description"))
-                .releaseDate(rs.getDate("release_date").toLocalDate())
-                .duration(rs.getInt("duration"))
-                .mpa(mpa)
-                .likes(new HashSet<>())
-                .genres(new ArrayList<>())
-                .directors(new ArrayList<>())
+                .id(resultSet.getInt("film_id"))
+                .name(resultSet.getString("film_name"))
+                .description(resultSet.getString("description"))
+                .releaseDate(resultSet.getDate("release_date").toLocalDate())
+                .duration(resultSet.getLong("duration"))
+                .genres(new LinkedHashSet<>())
+                .directors(new LinkedHashSet<>())
+                .mpa(rating)
                 .build();
     }
 }

@@ -1,26 +1,47 @@
 package ru.yandex.practicum.filmorate.interfaces;
 
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.film.searching.SearchStrategy;
+import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilmsStrategy;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface FilmStorage {
+    List<Film> getAll();
 
     Film create(Film film);
 
-    boolean delete(Long id);
+    void delete(Integer filmId);
 
     Film update(Film film);
 
-    Film getById(Long id);
+    boolean containsFilm(Integer filmId);
 
-    Collection<Film> getAll();
+    Optional<Film> getById(int id);
 
-    List<Film> getFilmsByUserId(Long userId);
+    void addLike(int filmId, int userId);
 
-    List<Film> getFilmsByDirector(Long directorId, String sortBy);
+    void removeLike(int filmId, int userId);
 
-    List<Film> getFilmsByDirectorAndOrByTitle(String query, String by);
+    boolean checkLikesUserByFilmId(Integer filmId, Integer userId);
+
+    List<Film> getMostPopularFilms(int size);
+
+    List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy);
+
+    List<Film> getCommonFilms(int userId, int friendId);
+
+    List<Film> getFilmRecommendationsForUser(int userId);
+
+    void removeAll();
+
+    List<Film> searchFilmsBy(String query, SearchStrategy searchStrategy);
+
+    List<Film> getPopularFilmsSortedByGenreAndYear(Integer count, Integer genreId, Integer year);
+
+    List<Film> getPopularFilmsSortedByGenre(Integer count, Integer genreId);
+
+    List<Film> getPopularFilmsSortedByYear(Integer count, Integer year);
 
 }

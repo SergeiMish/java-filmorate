@@ -1,14 +1,13 @@
 package ru.yandex.practicum.filmorate.dto;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Builder
 public class GenreDto {
-    private Long id;
+
+    private int id;
+
     private String name;
 }
-

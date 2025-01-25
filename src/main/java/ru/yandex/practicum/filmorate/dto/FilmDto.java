@@ -1,41 +1,41 @@
 package ru.yandex.practicum.filmorate.dto;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.*;
-import ru.yandex.practicum.filmorate.model.Mpa;
+import lombok.Builder;
+import lombok.Data;
+import ru.yandex.practicum.filmorate.validator.AfterDate;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.LinkedHashSet;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Builder
 public class FilmDto {
 
-    private long id;
-    @NotNull(message = "Название фильма не может быть пустым")
-    @NotEmpty(message = "Название фильма не может быть пустым")
+    private int id;
+
+    @NotBlank(message = "Film name can't be blank")
+    @Size(max = 100, message = "Film name is too long")
     private String name;
-    @NotNull(message = "Описание фильма не может быть пустым")
-    @NotEmpty(message = "Описание фильма не может быть пустым")
-    @Size(max = 200, message = "Описание фильма не может быть больше 200 символов")
+
+    @NotBlank
+    @Size(max = 200, message = "Description is too long")
     private String description;
-    @NotNull(message = "Дата релиза не может быть null")
+
+    @NotNull
+    private MpaDto mpa;
+
+    @NotNull
+    @AfterDate(value = "1895-12-28", message = "Release date should after 1st film birthday")
     private LocalDate releaseDate;
-    @Positive(message = "Продолжительность фильма должна быть положительной")
-    private int duration;
-    @Builder.Default
-    private Set<Long> likes = new HashSet<>();
-    private List<GenreDto> genres;
 
-    private List<DirectorDto> directors;
+    @Positive(message = "Film duration should be positive")
+    private long duration;
 
-    private Mpa mpa;
+    private LinkedHashSet<GenreDto> genres;
+
+    private LinkedHashSet<DirectorDto> directors;
 }

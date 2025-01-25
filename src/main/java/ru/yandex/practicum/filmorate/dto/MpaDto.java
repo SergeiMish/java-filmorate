@@ -1,17 +1,12 @@
 package ru.yandex.practicum.filmorate.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Builder
 public class MpaDto {
+    private int id;
 
-    private Long id;
-
-    @NotBlank(message = "Название MPA не может быть пустым")
     private String name;
 }

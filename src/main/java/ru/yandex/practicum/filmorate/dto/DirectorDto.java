@@ -1,16 +1,17 @@
 package ru.yandex.practicum.filmorate.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Builder
 public class DirectorDto {
-    private Long id;
+
+    @NotNull
+    private Integer id;
 
     @NotBlank
     @Size(max = 100, message = "Name of director is too long")

@@ -1,28 +1,32 @@
 package ru.yandex.practicum.filmorate.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Builder
 public class ReviewDto {
 
-    private Long reviewId;
+    @NotNull
+    Integer reviewId;
 
-    @NotNull(message = "Текст отзыва не может быть пустым")
-    @Size(max = 1000, message = "Текст отзыва не может быть длиннее 1000 символов")
-    private String content;
+    @NotNull
+    Integer filmId;
 
-    @NotNull(message = "Тип отзыва не может быть null")
-    private Boolean isPositive;
+    @NotNull
+    Integer userId;
 
-    private Long userId;
+    @NotNull
+    @JsonProperty("isPositive")
+    Boolean isPositive;
 
-    private Long filmId;
+    int useful;
 
-    private int useful;
+    @NotBlank
+    @Size(max = 400, message = "Content is too long")
+    String content;
 }

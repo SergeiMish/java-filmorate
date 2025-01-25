@@ -1,17 +1,13 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Builder
 public class Mpa {
 
-    private Long id;
+    private int id;
 
-    @NotBlank(message = "Название MPA не может быть пустым")
     private String name;
 }
