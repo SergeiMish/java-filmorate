@@ -20,7 +20,6 @@ import java.util.List;
 public class DirectorController {
 
     private final FilmService service;
-
     private final DirectorDtoMapper mapper;
 
     @GetMapping
