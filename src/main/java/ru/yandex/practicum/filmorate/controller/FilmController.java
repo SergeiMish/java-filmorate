@@ -130,9 +130,4 @@ public class FilmController {
                 .map(FilmDtoMapper::toDto)
                 .collect(Collectors.toList());
     }
-
-    @GetMapping("/search")
-    public List<Film> searchFilms(@RequestParam() String query, @RequestParam() Set<String> by) {
-        return filmService.searchFilms(query, by);
-    }
 }
