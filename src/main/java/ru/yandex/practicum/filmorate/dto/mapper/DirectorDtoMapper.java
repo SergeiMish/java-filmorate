@@ -9,15 +9,15 @@ public class DirectorDtoMapper {
 
     public static DirectorDto toDto(Director model) {
         return DirectorDto.builder()
-                          .id(model.getId())
-                          .name(model.getName())
-                          .build();
+                .id(model.getId())
+                .name(model.getName())
+                .build();
     }
 
     public static Director toEntity(DirectorDto dto) {
         return Director.builder()
-                       .id(dto.getId())
-                       .name(dto.getName())
-                       .build();
+                .id(dto.getId())
+                .name(dto.getName())
+                .build();
     }
 }

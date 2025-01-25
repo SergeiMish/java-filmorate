@@ -26,8 +26,8 @@ public class DirectorController {
     @GetMapping
     public Collection<DirectorDto> getAllDirectors() {
         return directorStorage.getAll().stream()
-                              .map(DirectorDtoMapper::toDto)
-                              .collect(Collectors.toList());
+                .map(DirectorDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     // Получение режиссёра по ID
@@ -42,15 +42,15 @@ public class DirectorController {
     @ResponseStatus(HttpStatus.CREATED)
     public DirectorDto createDirector(@RequestBody @Valid DirectorDto directorDto) {
         try {
-        Director director = DirectorDtoMapper.toEntity(directorDto);
-        Director createdDirector = directorStorage.create(director);
-        return DirectorDtoMapper.toDto(createdDirector);
+            Director director = DirectorDtoMapper.toEntity(directorDto);
+            Director createdDirector = directorStorage.create(director);
+            return DirectorDtoMapper.toDto(createdDirector);
         } catch (Exception e) {
             // Логируем ошибку и возвращаем подробное сообщение
             log.error("Error while creating director", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Произошла непредвиденная ошибка.", e);
         }
-        }
+    }
 
     // Обновление информации о режиссёре
     @PutMapping

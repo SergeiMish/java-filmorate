@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dao.DirectorDao;
 import ru.yandex.practicum.filmorate.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
@@ -20,7 +19,6 @@ import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -116,8 +114,8 @@ public class FilmController {
         }
         List<Film> films = filmService.getFilmsByDirector(id, sortBy);
         return films.stream()
-                    .map(FilmDtoMapper::toDto)
-                    .collect(Collectors.toList());
+                .map(FilmDtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
 

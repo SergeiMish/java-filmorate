@@ -265,9 +265,9 @@ public class FilmDao implements FilmStorage {
         return rows.stream().collect(Collectors.groupingBy(
                 row -> (Long) row.get("film_id"),
                 Collectors.mapping(row -> Director.builder()
-                                                  .id((Long) row.get("id"))
-                                                  .name((String) row.get("name"))
-                                                  .build(), Collectors.toList())
+                        .id((Long) row.get("id"))
+                        .name((String) row.get("name"))
+                        .build(), Collectors.toList())
         ));
     }
 
@@ -325,8 +325,8 @@ public class FilmDao implements FilmStorage {
         if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
             String insertDirectorsSql = "INSERT INTO FilmsDirectors (film_id, id) VALUES (?, ?)";
             List<Object[]> batchArgs = film.getDirectors().stream()
-                                           .map(director -> new Object[]{film.getId(), director.getId()})
-                                           .collect(Collectors.toList());
+                    .map(director -> new Object[]{film.getId(), director.getId()})
+                    .collect(Collectors.toList());
             jdbcTemplate.batchUpdate(insertDirectorsSql, batchArgs);
         }
     }

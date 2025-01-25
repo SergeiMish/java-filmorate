@@ -13,8 +13,8 @@ import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 
-
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,14 +26,13 @@ public class FilmService {
     private final UserService userService;
     private final JdbcTemplate jdbcTemplate;
     private final DirectorStorage directorStorage;
+    private final EventStorage eventStorage;
 
     private List<Film> getFilmsFullData(List<Film> films) {
         List<Long> filmIds = films.stream().map(Film::getId).collect(Collectors.toList());
 
         return films;
     }
-
-    private final EventStorage eventStorage;
 
     public Film addLike(Long filmId, Long userId) {
         log.info("Попытка пользователя {} добавить лайк фильму {}", userId, filmId);

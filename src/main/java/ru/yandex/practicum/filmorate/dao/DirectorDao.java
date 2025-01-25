@@ -17,7 +17,8 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Repository
@@ -44,19 +45,19 @@ public class DirectorDao implements DirectorStorage {
     @Override
     @Transactional
     public Director create(Director director) {
-            String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
-            KeyHolder keyHolder = new GeneratedKeyHolder();
+        String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-            jdbcTemplate.update(connection -> {
-                PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"id"});
-                stmt.setString(1, director.getName());
-                return stmt;
-            }, keyHolder);
+        jdbcTemplate.update(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"id"});
+            stmt.setString(1, director.getName());
+            return stmt;
+        }, keyHolder);
 
-            // Генерация id для нового директора
-            director.setId(Optional.ofNullable(keyHolder.getKey()).map(Number::longValue)
-                                   .orElseThrow(() -> new RuntimeException("Failed to generate director ID")));
-            return director;
+        // Генерация id для нового директора
+        director.setId(Optional.ofNullable(keyHolder.getKey()).map(Number::longValue)
+                .orElseThrow(() -> new RuntimeException("Failed to generate director ID")));
+        return director;
     }
 
     @Override
