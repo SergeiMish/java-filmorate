@@ -36,7 +36,7 @@ public class ReviewService {
     }
 
     public void remove(int id) {
-        Optional<Review> review = reviewStorage.getById(id);
+        Optional<Review> review = reviewStorage.findById(id);
         if (review.isPresent()) {
             Integer userId = review.get().getUserId();
             reviewStorage.delete(id);
@@ -49,7 +49,7 @@ public class ReviewService {
     }
 
     public Review findById(int id) {
-        return reviewStorage.getById(id).orElseThrow(() -> new NotFoundObjectException(REVIEW_NOT_FOUND + id));
+        return reviewStorage.findById(id).orElseThrow(() -> new NotFoundObjectException(REVIEW_NOT_FOUND + id));
     }
 
     public List<Review> findByFilmId(int filmId, int size) {
@@ -61,6 +61,6 @@ public class ReviewService {
     }
 
     public void removeRating(int reviewId, int userId, boolean isLike) {
-        reviewStorage.deleteRating(reviewId, userId, isLike);
+        reviewStorage.removeRating(reviewId, userId, isLike);
     }
 }

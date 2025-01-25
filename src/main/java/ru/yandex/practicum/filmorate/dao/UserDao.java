@@ -28,12 +28,12 @@ public class UserDao implements UserStorage {
     private final UserRowMapper userRowMapper;
 
     @Override
-    public List<User> getAll() {
+    public List<User> findAll() {
         return jdbcTemplate.query("SELECT * FROM Users", userRowMapper);
     }
 
     @Override
-    public User create(User user) {
+    public User add(User user) {
         String sql = "INSERT INTO Users (user_name, login, email, birthday) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -53,7 +53,7 @@ public class UserDao implements UserStorage {
     }
 
     @Override
-    public void delete(Integer id) {
+    public void removeUser(Integer id) {
         String deleteUserSql = "DELETE FROM Users WHERE user_id = ?";
         jdbcTemplate.update(deleteUserSql, id);
     }
@@ -85,7 +85,7 @@ public class UserDao implements UserStorage {
     }
 
     @Override
-    public Optional<User> getById(int id) {
+    public Optional<User> findById(int id) {
         String sql = "SELECT * FROM Users WHERE user_id = ?";
         try {
             User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
@@ -95,7 +95,7 @@ public class UserDao implements UserStorage {
         }
     }
 
-    public List<User> getFriendsByUserId(int userId) {
+    public List<User> getFriendsbyUserId(int userId) {
         if (!this.contains(userId)) {
             throw new NotFoundObjectException("Can't find friends of non-existing user");
         }
@@ -125,14 +125,14 @@ public class UserDao implements UserStorage {
     }
 
     @Override
-    public void deleteFriendship(Integer userId, Integer friendId) {
+    public void removeFriendship(Integer userId, Integer friendId) {
         String sql = "DELETE FROM Friendships WHERE user_id = ? AND friend_id = ?";
 
         jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
-    public void deleteAll() {
+    public void removeAll() {
         String sql = "DELETE FROM Users";
         jdbcTemplate.update(sql);
     }

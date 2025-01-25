@@ -30,12 +30,12 @@ public class DirectorDao implements DirectorStorage {
     private final DirectorRowMapper directorRowMapper;
 
     @Override
-    public List<Director> getAll() {
+    public List<Director> findAllDirectors() {
         return jdbcTemplate.query("SELECT * FROM Directors", directorRowMapper);
     }
 
     @Override
-    public Optional<Director> getById(int id) {
+    public Optional<Director> findDirectorById(int id) {
         String sql = "SELECT * FROM Directors WHERE director_id = ?";
         try {
             Director director = jdbcTemplate.queryForObject(sql, directorRowMapper, id);
@@ -46,14 +46,14 @@ public class DirectorDao implements DirectorStorage {
     }
 
     @Override
-    public boolean contains(Integer directorId) {
+    public boolean containsDirector(Integer directorId) {
         String sql = "SELECT COUNT(*) FROM Directors WHERE director_id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, directorId);
         return count != null && count > 0;
     }
 
     @Override
-    public Director create(Director director) {
+    public Director createDirector(Director director) {
         String sql = "INSERT INTO Directors (director_name) VALUES (?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -70,7 +70,7 @@ public class DirectorDao implements DirectorStorage {
     }
 
     @Override
-    public Director update(Director director) {
+    public Director updateDirector(Director director) {
         String sql = "UPDATE Directors SET director_name = ? WHERE director_id = ?";
         int rowsAffected = jdbcTemplate.update(sql, director.getName(), director.getId());
 
@@ -81,13 +81,13 @@ public class DirectorDao implements DirectorStorage {
     }
 
     @Override
-    public void delete(int id) {
+    public void deleteDirector(int id) {
         String sql = "DELETE FROM Directors WHERE director_id = ?";
         jdbcTemplate.update(sql, id);
     }
 
     @Override
-    public void updateDirectorsByFilm(Film film) {
+    public void updateDirectorOfFilm(Film film) {
         String removeFilmDirector = "DELETE FROM FilmDirectors where film_id = ?";
         jdbcTemplate.update(removeFilmDirector, film.getId());
 
@@ -136,7 +136,7 @@ public class DirectorDao implements DirectorStorage {
     }
 
     @Override
-    public List<Director> getDirectorsByFilm(int filmId) {
+    public List<Director> findDirectorForFilm(int filmId) {
         String sql = "SELECT d.director_id, d.director_name " +
                 "FROM FilmDirectors fd " +
                 "INNER JOIN Directors d " +
@@ -154,7 +154,7 @@ public class DirectorDao implements DirectorStorage {
 
         String sql = "SELECT fd.film_id, d.director_id, d.director_name " +
                 "FROM FilmDirectors fd " +
-                "INNER JOIN irectors d ON fd.director_id = d.director_id " +
+                "INNER JOIN Directors d ON fd.director_id = d.director_id " +
                 "WHERE fd.film_id IN (%s)";
 
         String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));

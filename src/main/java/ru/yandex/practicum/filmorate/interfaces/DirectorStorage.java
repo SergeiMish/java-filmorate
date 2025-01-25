@@ -9,21 +9,21 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface DirectorStorage {
-    List<Director> getAll();
+    List<Director> findAllDirectors();
 
-    Optional<Director> getById(int id);
+    Optional<Director> findDirectorById(int id);
 
-    boolean contains(Integer directorId);
+    boolean containsDirector(Integer directorId);
 
-    Director create(Director director);
+    Director createDirector(Director director);
 
-    Director update(Director director);
+    Director updateDirector(Director director);
 
-    void delete(int directorId);
+    void deleteDirector(int directorId);
 
-    void updateDirectorsByFilm(Film film);
+    void updateDirectorOfFilm(Film film);
 
-    List<Director> getDirectorsByFilm(int filmId);
+    List<Director> findDirectorForFilm(int filmId);
 
     Map<Integer, Set<Director>> loadFilmsDirectors(List<Integer> filmIds);
 }

@@ -77,7 +77,7 @@ public class ReviewDao implements ReviewStorage {
         if (rowsAffected == 0) {
             throw new NotFoundObjectException(REVIEW_NOT_FOUND + newReview.getReviewId());
         }
-        return getById(newReview.getReviewId()).stream().findFirst().orElse(null);
+        return findById(newReview.getReviewId()).stream().findFirst().orElse(null);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class ReviewDao implements ReviewStorage {
     }
 
     @Override
-    public Optional<Review> getById(int id) {
+    public Optional<Review> findById(int id) {
         try {
             String sql = "SELECT r.*, COALESCE(SUM(rl.is_like), 0) as useful " +
                     "FROM Reviews r " +
@@ -139,7 +139,7 @@ public class ReviewDao implements ReviewStorage {
     }
 
     @Override
-    public void deleteRating(int reviewId, int userId, boolean isLike) {
+    public void removeRating(int reviewId, int userId, boolean isLike) {
         String sql = "DELETE FROM ReviewLikes WHERE review_id = ? AND user_id = ?";
         try {
             jdbcTemplate.update(sql, reviewId, userId);

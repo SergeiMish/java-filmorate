@@ -65,7 +65,7 @@ public class FilmService {
     }
 
     public List<Film> getFilms() {
-        List<Film> films = filmStorage.getAll();
+        List<Film> films = filmStorage.findAllFilms();
         return getFilmsFullData(films);
     }
 
@@ -78,11 +78,11 @@ public class FilmService {
     }
 
     public List<Director> getDirectors() {
-        return directorStorage.getAll();
+        return directorStorage.findAllDirectors();
     }
 
     public Film findFilmById(int id) {
-        return filmStorage.getById(id).orElseThrow(() -> new NotFoundObjectException(FILM_NOT_FOUND + id));
+        return filmStorage.findFilmById(id).orElseThrow(() -> new NotFoundObjectException(FILM_NOT_FOUND + id));
     }
 
     public Genre findGenreById(int id) {
@@ -94,7 +94,7 @@ public class FilmService {
     }
 
     public Director findDirectorById(int id) {
-        return directorStorage.getById(id).orElseThrow(() -> new NotFoundObjectException(DIRECTOR_NOT_FOUND + id));
+        return directorStorage.findDirectorById(id).orElseThrow(() -> new NotFoundObjectException(DIRECTOR_NOT_FOUND + id));
     }
 
     public LinkedHashSet<Genre> findGenresForFilm(int id) {
@@ -106,36 +106,36 @@ public class FilmService {
     }
 
     public LinkedHashSet<Director> findDirectorsForFilm(int id) {
-        return new LinkedHashSet<>(directorStorage.getDirectorsByFilm(id));
+        return new LinkedHashSet<>(directorStorage.findDirectorForFilm(id));
     }
 
     public void updateDirectorsForFilm(Film film) {
-        directorStorage.updateDirectorsByFilm(film);
+        directorStorage.updateDirectorOfFilm(film);
     }
 
     public Director createDirector(Director director) {
-        return directorStorage.create(director);
+        return directorStorage.createDirector(director);
     }
 
     public Director updateDirector(Director director) {
-        return directorStorage.update(director);
+        return directorStorage.updateDirector(director);
     }
 
     public void deleteDirector(Integer id) {
-        directorStorage.delete(id);
+        directorStorage.deleteDirector(id);
     }
 
     public Film create(Film film) {
-        return filmStorage.create(film);
+        return filmStorage.add(film);
     }
 
     public void removeFilm(Integer id) {
-        filmStorage.delete(id);
+        filmStorage.removeFilm(id);
     }
 
     public Film updateFilm(Film newFilm) {
         genreStorage.updateGenresOfFilm(newFilm);
-        directorStorage.updateDirectorsByFilm(newFilm);
+        directorStorage.updateDirectorOfFilm(newFilm);
         return filmStorage.update(newFilm);
     }
 

@@ -17,12 +17,12 @@ public interface ReviewStorage {
 
     List<Review> getReviews();
 
-    Optional<Review> getById(int id);
+    Optional<Review> findById(int id);
 
     List<Review> findByFilmId(int id, int size);
 
     void addRating(int reviewId, int userId, boolean isLike);
 
-    void deleteRating(int id, int userId, boolean isLike);
+    void removeRating(int id, int userId, boolean isLike);
 
 }

@@ -7,25 +7,25 @@ import java.util.Optional;
 
 public interface UserStorage {
 
-    List<User> getAll();
+    List<User> findAll();
 
-    User create(User user);
+    User add(User user);
 
-    void delete(Integer id);
+    void removeUser(Integer id);
 
     User update(User newUser);
 
     boolean contains(Integer id);
 
-    Optional<User> getById(int id);
+    Optional<User> findById(int id);
 
-    List<User> getFriendsByUserId(int userId);
+    List<User> getFriendsbyUserId(int userId);
 
     List<User> getCommonFriends(int userId, int friendId);
 
     void addFriendship(Integer userId, Integer friendId);
 
-    void deleteFriendship(Integer userId, Integer friendId);
+    void removeFriendship(Integer userId, Integer friendId);
 
-    void deleteAll();
+    void removeAll();
 }

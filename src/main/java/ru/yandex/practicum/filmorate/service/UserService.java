@@ -25,20 +25,20 @@ public class UserService {
     private final FeedStorage feedStorage;
 
     public List<User> getUsers() {
-        return userStorage.getAll();
+        return userStorage.findAll();
     }
 
     public User getUser(int id) {
-        return userStorage.getById(id).orElseThrow(() -> new NotFoundObjectException(USER_NOT_FOUND + id));
+        return userStorage.findById(id).orElseThrow(() -> new NotFoundObjectException(USER_NOT_FOUND + id));
     }
 
     public User create(User user) {
         setName(user);
-        return userStorage.create(user);
+        return userStorage.add(user);
     }
 
     public void removeUser(Integer id) {
-        userStorage.delete(id);
+        userStorage.removeUser(id);
     }
 
     public User updateUser(User newUser) {
@@ -71,16 +71,16 @@ public class UserService {
         if (!userFriends.contains(friendId)) {
             return;
         }
-        userStorage.deleteFriendship(userId, friendId);
+        userStorage.removeFriendship(userId, friendId);
         feedStorage.addFeed(friendId, userId, FRIEND, REMOVE);
     }
 
     public List<User> getUserFriends(Integer id) {
-        return userStorage.getFriendsByUserId(id);
+        return userStorage.getFriendsbyUserId(id);
     }
 
     public List<Integer> getUserFriendIds(Integer id) {
-        return userStorage.getFriendsByUserId(id).stream()
+        return userStorage.getFriendsbyUserId(id).stream()
                 .map(User::getId)
                 .toList();
     }

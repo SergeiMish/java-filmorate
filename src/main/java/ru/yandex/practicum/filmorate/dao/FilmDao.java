@@ -36,7 +36,7 @@ public class FilmDao implements FilmStorage {
     private final FilmRowMapper filmRowMapper;
 
     @Override
-    public List<Film> getAll() {
+    public List<Film> findAllFilms() {
         return jdbcTemplate.query("SELECT " +
                         "f.film_id film_id, " +
                         "f.film_name film_name, " +
@@ -51,7 +51,7 @@ public class FilmDao implements FilmStorage {
     }
 
     @Override
-    public Film create(Film film) {
+    public Film add(Film film) {
         String addFilmsql = "INSERT INTO Films (film_name, description, release_date, duration, mpa_id) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
@@ -78,7 +78,7 @@ public class FilmDao implements FilmStorage {
     }
 
     @Override
-    public void delete(Integer filmId) {
+    public void removeFilm(Integer filmId) {
         String deleteFilmSql = "DELETE FROM Films WHERE film_id = ?";
         jdbcTemplate.update(deleteFilmSql, filmId);
     }
@@ -111,7 +111,7 @@ public class FilmDao implements FilmStorage {
     }
 
     @Override
-    public Optional<Film> getById(int id) {
+    public Optional<Film> findFilmById(int id) {
         String sqlQuery = "SELECT " +
                 "f.film_id as film_id, " +
                 "f.film_name as film_name, " +
