@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -41,13 +40,8 @@ public class FilmController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public FilmDto create(@Valid @RequestBody CreateFilmDto filmDto) {
-        Film toCreate = filmMapper.map(filmDto);
-        Film createdFilm = service.create(toCreate);
-        service.updateGenresForFilm(createdFilm);
-        service.updateDirectorsForFilm(createdFilm);
-        createdFilm.setGenres(toCreate.getGenres());
-        createdFilm.setDirectors(toCreate.getDirectors());
+    public FilmDto create(@Valid @RequestBody FilmDto filmDto) {
+        Film createdFilm = service.create(filmDto);
         return filmMapper.map(createdFilm);
     }
 
@@ -58,20 +52,13 @@ public class FilmController {
 
     @PutMapping
     public FilmDto updateFilm(@Valid @RequestBody FilmDto filmDto) {
-        Film film = filmMapper.map(filmDto);
-        Film updatedFilm = service.updateFilm(film);
-        service.updateGenresForFilm(updatedFilm);
-        service.updateDirectorsForFilm(updatedFilm);
-        updatedFilm.setGenres(film.getGenres());
-        updatedFilm.setDirectors(film.getDirectors());
+        Film updatedFilm = service.updateFilm(filmDto);
         return filmMapper.map(updatedFilm);
     }
 
     @GetMapping("/{id}")
     public FilmDto getFilm(@PathVariable int id) {
         Film film = service.findFilmById(id);
-        film.setGenres(service.findGenresForFilm(id));
-        film.setDirectors(service.findDirectorsForFilm(id));
         return filmMapper.map(film);
     }
 
@@ -113,11 +100,8 @@ public class FilmController {
     @GetMapping("/common")
     public ResponseEntity<Object> getCommonFilms(@RequestParam("userId") int userId,
                                                  @RequestParam("friendId") int friendId) {
-        List<Film> films = service.getCommonFilms(userId, friendId);
-        List<FilmDto> filmDtos = films.stream()
-                .map(filmMapper::map)
-                .toList();
-        return ResponseEntity.ok(filmDtos);
+        List<FilmDto> filmDto = service.getCommonFilms(userId, friendId);
+        return ResponseEntity.ok(filmDto);
     }
 
     @GetMapping("/search")

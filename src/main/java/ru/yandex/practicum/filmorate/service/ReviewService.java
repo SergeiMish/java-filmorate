@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.interfaces.ReviewStorage;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 import static ru.yandex.practicum.filmorate.model.enums.EventType.REVIEW;
 import static ru.yandex.practicum.filmorate.model.enums.Operation.*;
@@ -34,12 +34,11 @@ public class ReviewService {
     }
 
     public void remove(int id) {
-        Optional<Review> review = reviewStorage.findById(id);
-        if (review.isPresent()) {
-            Integer userId = review.get().getUserId();
-            reviewStorage.delete(id);
-            feedStorage.addFeed(id, userId, REVIEW, REMOVE);
-        }
+        Review review = reviewStorage.findById(id).orElseThrow(() -> new NoSuchElementException("Not found id" + id));
+
+        Integer userId = review.getUserId();
+        reviewStorage.delete(id);
+        feedStorage.addFeed(id, userId, REVIEW, REMOVE);
     }
 
     public List<Review> findAll() {

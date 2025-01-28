@@ -35,7 +35,9 @@ public class UserController {
     @GetMapping
     public List<UserDto> findAll() {
         List<User> users = userService.getUsers();
-        return users.stream().map(userMapper::map).toList();
+        return users.stream()
+                .map(userMapper::map)
+                .toList();
     }
 
     @PostMapping
@@ -77,20 +79,24 @@ public class UserController {
     @GetMapping("/{id}/friends")
     public List<UserDto> getFriends(@PathVariable Integer id) {
         return userService.getUserFriends(id).stream()
-                .map(userMapper::map).toList();
+                .map(userMapper::map)
+                .toList();
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
     public List<UserDto> getCommonFriends(@PathVariable Integer id, @PathVariable Integer otherId) {
         return userService.getCommonFriends(id, otherId).stream()
-                .map(userMapper::map).toList();
+                .map(userMapper::map)
+                .toList();
     }
 
     @GetMapping("/{id}/recommendations")
     public List<FilmDto> getRecommendations(@PathVariable Integer id) {
         List<Film> recommendations = filmService.getFilmRecommendationsForUser(id);
 
-        return recommendations.stream().map(filmMapper::map).toList();
+        return recommendations.stream()
+                .map(filmMapper::map)
+                .toList();
     }
 
     @GetMapping("/{id}/feed")

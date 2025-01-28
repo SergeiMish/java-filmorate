@@ -26,7 +26,9 @@ public class GenreController {
     @GetMapping
     public List<GenreDto> findAllGenres() {
         List<Genre> genres = service.getGenres();
-        return genres.stream().map(mapper::map).toList();
+        return genres.stream()
+                .map(mapper::map)
+                .toList();
     }
 
     @GetMapping("/{id}")

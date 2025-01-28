@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
@@ -50,9 +51,12 @@ public class FilmService {
             Set.of("title"), new SearchByTitle(),
             Set.of("director", "title"), new SearchByDirectorAndTitle()
     );
+    private final FilmDtoMapper filmDtoMapper;
 
     private List<Film> getFilmsFullData(List<Film> films) {
-        List<Integer> filmIds = films.stream().map(Film::getId).collect(Collectors.toList());
+        List<Integer> filmIds = films.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList());
         Map<Integer, Set<Genre>> filmGenres = genreStorage.loadFilmsGenres(filmIds);
         Map<Integer, Set<Director>> filmDirectors = directorStorage.loadFilmsDirectors(filmIds);
 
@@ -82,7 +86,13 @@ public class FilmService {
     }
 
     public Film findFilmById(int id) {
-        return filmStorage.findFilmById(id).orElseThrow(() -> new NotFoundObjectException(FILM_NOT_FOUND + id));
+        Film film = filmStorage.findFilmById(id)
+                .orElseThrow(() -> new NotFoundObjectException(FILM_NOT_FOUND + id));
+
+        film.setGenres(findGenresForFilm(id));
+        film.setDirectors(findDirectorsForFilm(id));
+
+        return film;
     }
 
     public Genre findGenreById(int id) {
@@ -125,18 +135,36 @@ public class FilmService {
         directorStorage.deleteDirector(id);
     }
 
-    public Film create(Film film) {
-        return filmStorage.add(film);
+    public Film create(FilmDto filmDto) {
+        Film film = filmDtoMapper.map(filmDto);
+
+        Film createdFilm = filmStorage.add(film);
+
+        updateGenresForFilm(createdFilm);
+        updateDirectorsForFilm(createdFilm);
+
+        createdFilm.setGenres(film.getGenres());
+        createdFilm.setDirectors(film.getDirectors());
+
+        return createdFilm;
     }
 
     public void removeFilm(Integer id) {
         filmStorage.removeFilm(id);
     }
 
-    public Film updateFilm(Film newFilm) {
-        genreStorage.updateGenresOfFilm(newFilm);
-        directorStorage.updateDirectorOfFilm(newFilm);
-        return filmStorage.update(newFilm);
+    public Film updateFilm(FilmDto newFilmDto) {
+        Film film = filmDtoMapper.map(newFilmDto);
+
+        Film updatedFilm = filmStorage.update(film);
+
+        updateGenresForFilm(updatedFilm);
+        updateDirectorsForFilm(updatedFilm);
+
+        updatedFilm.setGenres(film.getGenres());
+        updatedFilm.setDirectors(film.getDirectors());
+
+        return updatedFilm;
     }
 
     public void addLike(Integer filmId, Integer userId) {
@@ -224,8 +252,12 @@ public class FilmService {
         return getFilmsFullData(filmStorage.getPopularFilmsSortedByYear(count, year));
     }
 
-    public List<Film> getCommonFilms(int userId, int friendId) {
-        return getFilmsFullData(filmStorage.getCommonFilms(userId, friendId));
+    public List<FilmDto> getCommonFilms(int userId, int friendId) {
+        List<Film> films = getFilmsFullData(filmStorage.getCommonFilms(userId, friendId));
+
+        return films.stream()
+                .map(filmDtoMapper::map)
+                .toList();
     }
 
     public List<Film> getFilmRecommendationsForUser(int userId) {

@@ -26,7 +26,9 @@ public class MpaController {
     @GetMapping
     public List<MpaDto> findAllMpa() {
         List<Mpa> ratings = service.getRatings();
-        return ratings.stream().map(mapper::map).toList();
+        return ratings.stream()
+                .map(mapper::map)
+                .toList();
     }
 
     @GetMapping("/{id}")

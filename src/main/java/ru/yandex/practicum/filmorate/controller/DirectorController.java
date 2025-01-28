@@ -26,7 +26,9 @@ public class DirectorController {
     public List<DirectorDto> findAllDirectors() {
         List<Director> directors = service.getDirectors();
         log.info("Returning list of directors");
-        return directors.stream().map(mapper::map).toList();
+        return directors.stream()
+                .map(mapper::map)
+                .toList();
     }
 
     @GetMapping("/{id}")
