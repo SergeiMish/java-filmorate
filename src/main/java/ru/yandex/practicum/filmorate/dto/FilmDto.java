@@ -4,14 +4,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import ru.yandex.practicum.filmorate.validator.AfterDate;
 
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 @Builder
 public class FilmDto {
 

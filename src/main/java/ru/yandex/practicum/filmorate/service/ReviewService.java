@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.interfaces.FeedStorage;
 import ru.yandex.practicum.filmorate.interfaces.ReviewStorage;
-import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.List;
@@ -21,7 +20,6 @@ public class ReviewService {
 
     private final ReviewStorage reviewStorage;
     private final FeedStorage feedStorage;
-    private final UserStorage userStorage;
 
     public Review create(Review review) {
         Review createdReview = reviewStorage.create(review);

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
-import ru.yandex.practicum.filmorate.dto.mapper.MpaDtoMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -32,12 +31,12 @@ public class FilmController {
 
     private final FilmDtoMapper filmMapper;
 
-    private final MpaDtoMapper ratingMapper;
-
     @GetMapping
     public List<FilmDto> findAll() {
         List<Film> films = service.getFilms();
-        return films.stream().map(filmMapper::map).toList();
+        return films.stream()
+                .map(filmMapper::map)
+                .toList();
     }
 
     @PostMapping
@@ -114,19 +113,11 @@ public class FilmController {
     @GetMapping("/common")
     public ResponseEntity<Object> getCommonFilms(@RequestParam("userId") int userId,
                                                  @RequestParam("friendId") int friendId) {
-        try {
-            List<Film> films = service.getCommonFilms(userId, friendId);
-
-            return ResponseEntity.ok(films.stream()
-                    .map(filmMapper::map)
-                    .toList());
-        } catch (IllegalArgumentException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.internalServerError().body("Internal Server Error");
-        }
+        List<Film> films = service.getCommonFilms(userId, friendId);
+        List<FilmDto> filmDtos = films.stream()
+                .map(filmMapper::map)
+                .toList();
+        return ResponseEntity.ok(filmDtos);
     }
 
     @GetMapping("/search")

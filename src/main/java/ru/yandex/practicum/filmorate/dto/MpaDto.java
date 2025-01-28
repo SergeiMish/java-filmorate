@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 @Builder
 public class MpaDto {
     private int id;
