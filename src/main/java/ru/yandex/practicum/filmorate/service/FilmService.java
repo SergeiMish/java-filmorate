@@ -13,13 +13,12 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.enums.SortParam;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchByDirector;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchByDirectorAndTitle;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchByTitle;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchStrategy;
-import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilmsByDate;
-import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilmsByLikes;
-import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilmsStrategy;
+import ru.yandex.practicum.filmorate.service.sorting.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,10 +40,6 @@ public class FilmService {
     private final GenreStorage genreStorage;
     private final DirectorStorage directorStorage;
 
-    private static final Map<String, SortDirectorFilmsStrategy> SORT_DIRECTOR_FILMS_STRATEGIES = Map.of(
-            "year", new SortDirectorFilmsByDate(),
-            "likes", new SortDirectorFilmsByLikes()
-    );
 
     private static final Map<Set<String>, SearchStrategy> SEARCH__FILMS_STRATEGIES = Map.of(
             Set.of("director"), new SearchByDirector(),
@@ -212,18 +207,15 @@ public class FilmService {
         return getFilmsFullData(foundedFilms);
     }
 
-    public ResponseEntity<Object> getFilmsByDirectorSorted(int directorId, String sortParam, FilmDtoMapper filmMapper) {
+    public ResponseEntity<Object> getFilmsByDirectorSorted(int directorId, SortParam sortParam, FilmDtoMapper filmMapper) {
         try {
-            List<Film> films;
-            if (SORT_DIRECTOR_FILMS_STRATEGIES.containsKey(sortParam)) {
-                films = getFilmsFullData(filmStorage.getFilmsByDirectorSorted(directorId,
-                        SORT_DIRECTOR_FILMS_STRATEGIES.get(sortParam.toLowerCase())));
-            } else {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Invalid sortBy parameter: '" + sortParam +
-                        "'. Allowed values - year, likes");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
+            log.info("Sorting films for directorId: {} with sortParam: {}", directorId, sortParam);
+
+            SortStrategy sortStrategy = sortParam.getSortStrategy();
+
+            List<Film> films = getFilmsFullData(filmStorage.getFilmsByDirectorSorted(directorId, sortStrategy));
+            log.info("Retrieved {} films", films.size());
+
             if (films.isEmpty()) {
                 return ResponseEntity.notFound().build();
             } else {
@@ -232,10 +224,10 @@ public class FilmService {
                         .toList());
             }
         } catch (IllegalArgumentException e) {
-            log.error(e.getMessage());
+            log.error("IllegalArgumentException: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Exception: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("Internal Server Error");
         }
     }

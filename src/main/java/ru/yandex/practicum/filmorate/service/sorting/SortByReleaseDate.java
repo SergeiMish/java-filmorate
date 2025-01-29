@@ -1,13 +1,10 @@
 package ru.yandex.practicum.filmorate.service.sorting;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
-public class SortDirectorFilmsByDate implements SortDirectorFilmsStrategy {
+public class SortByReleaseDate implements SortStrategy {
 
     @Override
     public String getSortSQL(int directorId) {
-        String filmsSql = "SELECT " +
+        return "SELECT " +
                 "f.film_id AS film_id, " +
                 "f.film_name AS film_name, " +
                 "f.description AS description, " +
@@ -22,6 +19,5 @@ public class SortDirectorFilmsByDate implements SortDirectorFilmsStrategy {
                 "WHERE fd.director_id = ? " +
                 "GROUP BY f.film_id, f.film_name, f.description, f.release_date, f.duration, r.mpa_id, r.mpa_name " +
                 "ORDER BY f.release_date";
-        return filmsSql;
     }
 }

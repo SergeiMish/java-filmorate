@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.interfaces;
 
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchStrategy;
-import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilmsStrategy;
+import ru.yandex.practicum.filmorate.service.sorting.SortStrategy;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +28,7 @@ public interface FilmStorage {
 
     List<Film> getMostPopularFilms(int size);
 
-    List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy);
+    List<Film> getFilmsByDirectorSorted(int directorId, SortStrategy sortStrategy);
 
     List<Film> getCommonFilms(int userId, int friendId);
 

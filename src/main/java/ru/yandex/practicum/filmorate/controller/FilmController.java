@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.enums.SortParam;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -93,8 +95,14 @@ public class FilmController {
 
     @GetMapping("/director/{directorId}")
     public ResponseEntity<Object> getFilmsByDirector(@PathVariable Integer directorId,
-                                                     @RequestParam(name = "sortBy", required = false) String sortBy) {
-        return service.getFilmsByDirectorSorted(directorId, sortBy, filmMapper);
+                                                      @RequestParam(name = "sortBy", required = false, defaultValue = "YEAR") String sortBy) {
+        try {
+            SortParam sortParam = SortParam.valueOf(sortBy.toUpperCase());
+            return service.getFilmsByDirectorSorted(directorId, sortParam, filmMapper);
+        } catch (IllegalArgumentException e) {
+            String error = "Invalid sortBy parameter: '" + sortBy + "'. Allowed values - YEAR, LIKES";
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", error));
+        }
     }
 
     @GetMapping("/common")

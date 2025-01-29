@@ -14,8 +14,7 @@ import ru.yandex.practicum.filmorate.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchStrategy;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchingFilms;
-import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilms;
-import ru.yandex.practicum.filmorate.service.sorting.SortDirectorFilmsStrategy;
+import ru.yandex.practicum.filmorate.service.sorting.SortStrategy;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -31,7 +30,6 @@ import static ru.yandex.practicum.filmorate.utils.ErrorMessages.FILM_NOT_FOUND;
 @RequiredArgsConstructor
 public class FilmDao implements FilmStorage {
     private final SearchingFilms searchingFilms;
-    private final SortDirectorFilms sortDirectorFilms;
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
 
@@ -165,9 +163,9 @@ public class FilmDao implements FilmStorage {
     }
 
     @Override
-    public List<Film> getFilmsByDirectorSorted(int directorId, SortDirectorFilmsStrategy sortDirectorFilmsStrategy) {
-        sortDirectorFilms.setSearchStrategy(sortDirectorFilmsStrategy);
-        return jdbcTemplate.query(sortDirectorFilms.searchFilms(directorId), filmRowMapper, directorId);
+    public List<Film> getFilmsByDirectorSorted(int directorId, SortStrategy sortStrategy) {
+        String sql = sortStrategy.getSortSQL(directorId);
+        return jdbcTemplate.query(sql, filmRowMapper, directorId);
     }
 
     @Override
