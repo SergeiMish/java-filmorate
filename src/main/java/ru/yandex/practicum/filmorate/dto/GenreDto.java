@@ -8,7 +8,8 @@ import lombok.*;
 @EqualsAndHashCode
 @Builder
 public class GenreDto {
-    private Long id;
+
+    private int id;
+
     private String name;
 }
-

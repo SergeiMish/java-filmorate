@@ -12,19 +12,20 @@ import java.time.LocalDate;
 @Builder
 public class UserDto {
 
-    private long id;
-
-    @Email(message = "Некорректный email")
-    @NotBlank(message = "Email не может быть пустым")
-    private String email;
-
-    @NotBlank(message = "Логин не может быть пустым")
-    @Pattern(regexp = "\\S+", message = "Логин не должен содержать пробелы")
-    private String login;
+    private Integer id;
 
     private String name;
 
-    @NotNull(message = "Дата рождения не может быть null")
-    @PastOrPresent(message = "Дата рождения не может быть в будущем")
+    @NotBlank(message = "Login can't be empty")
+    @Pattern(regexp = "^[\\S]+$", message = "The field must not contain spaces")
+    private String login;
+
+    @NotBlank
+    @Email(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "Email is not valid")
+    private String email;
+
+    @NotNull
+    @PastOrPresent(message = "Birthday can't be in the future")
     private LocalDate birthday;
+
 }

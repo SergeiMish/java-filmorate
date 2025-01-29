@@ -1,52 +1,332 @@
+DROP
+ALL OBJECTS;
+
 CREATE TABLE IF NOT EXISTS Users
 (
-                       user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                       email VARCHAR(255) NOT NULL UNIQUE,
-                       login VARCHAR(255) NOT NULL,
-                       name VARCHAR(255),
-                       birthday DATE NOT NULL
+    user_id
+    INTEGER
+    GENERATED
+    BY
+    DEFAULT AS
+    IDENTITY
+    PRIMARY
+    KEY,
+    user_name
+    VARCHAR
+(
+    255
+),
+    login VARCHAR
+(
+    255
+) NOT NULL,
+    email VARCHAR
+(
+    255
+) NOT NULL,
+    birthday DATE NOT NULL
+    );
+
+CREATE UNIQUE index IF NOT EXISTS USER_EMAIL_UINDEX ON USERS (email);
+CREATE UNIQUE index IF NOT EXISTS USER_LOGIN_UINDEX ON USERS (login);
+
+CREATE TABLE IF NOT EXISTS Friendships
+(
+    user_id
+    INTEGER
+    NOT
+    NULL,
+    friend_id
+    INTEGER
+    NOT
+    NULL,
+    CONSTRAINT
+    fk_user_id
+    FOREIGN
+    KEY
+(
+    user_id
+) REFERENCES users
+(
+    user_id
+) ON DELETE CASCADE,
+    CONSTRAINT fk_friend_id FOREIGN KEY
+(
+    friend_id
+) REFERENCES users
+(
+    user_id
+)
+  ON DELETE CASCADE,
+    PRIMARY KEY
+(
+    user_id,
+    friend_id
+)
+    );
+
+CREATE TABLE IF NOT EXISTS MpaRatings
+(
+    mpa_id
+    INTEGER
+    GENERATED
+    BY
+    DEFAULT AS
+    IDENTITY
+    PRIMARY
+    KEY,
+    mpa_name
+    VARCHAR
+(
+    255
+) NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS Films
+(
+    film_id
+    INTEGER
+    GENERATED
+    BY
+    DEFAULT AS
+    IDENTITY
+    PRIMARY
+    KEY,
+    film_name
+    VARCHAR
+(
+    255
+) NOT NULL,
+    description TEXT NOT NULL,
+    release_date DATE NOT NULL,
+    duration BIGINT NOT NULL,
+    mpa_id INTEGER NOT NULL,
+    CONSTRAINT fk_mpa_id FOREIGN KEY
+(
+    mpa_id
+) REFERENCES MpaRatings
+(
+    mpa_id
+) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS Reviews
+(
+    review_id
+    INTEGER
+    GENERATED
+    BY
+    DEFAULT AS
+    IDENTITY
+    PRIMARY
+    KEY,
+    content
+    VARCHAR
+(
+    500
+),
+    is_positive BOOLEAN NOT NULL,
+    user_id INTEGER NOT NULL,
+    film_id INTEGER NOT NULL,
+    CONSTRAINT fk_film_id4 FOREIGN KEY
+(
+    film_id
+) REFERENCES Films
+(
+    film_id
+) ON DELETE CASCADE,
+    CONSTRAINT fk_user_id2 FOREIGN KEY
+(
+    user_id
+) REFERENCES Users
+(
+    user_id
+)
+  ON DELETE CASCADE
+    );
+
+CREATE TABLE ReviewLikes
+(
+    review_id INTEGER NOT NULL,
+    user_id   INTEGER NOT NULL,
+    is_like   INTEGER NOT NULL,
+    CONSTRAINT fk_review_id FOREIGN KEY (review_id) REFERENCES Reviews (review_id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_id3 FOREIGN KEY (user_id) REFERENCES Users (user_id) ON DELETE CASCADE,
+    PRIMARY KEY (review_id, user_id)
 );
 
-CREATE TABLE IF NOT EXISTS Friendships (
-                      user1_id BIGINT NOT NULL,
-                      user2_id BIGINT NOT NULL,
-                      PRIMARY KEY (user1_id, user2_id),
-                      FOREIGN KEY (user1_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-                      FOREIGN KEY (user2_id) REFERENCES Users(user_id) ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS Genres
+(
+    genre_id
+    INTEGER
+    GENERATED
+    BY
+    DEFAULT AS
+    IDENTITY
+    PRIMARY
+    KEY,
+    genre_name
+    VARCHAR
+(
+    255
+) NOT NULL
+    );
 
-CREATE TABLE IF NOT EXISTS MpaRatings (
-                                          mpa_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                          name VARCHAR(255) NOT NULL UNIQUE
-);
+CREATE TABLE IF NOT EXISTS FilmGenres
+(
+    film_id
+    INTEGER
+    NOT
+    NULL,
+    genre_id
+    INTEGER
+    NOT
+    NULL,
+    CONSTRAINT
+    fk_film_id2
+    FOREIGN
+    KEY
+(
+    film_id
+) REFERENCES Films
+(
+    film_id
+) ON DELETE CASCADE,
+    CONSTRAINT fk_genre_id FOREIGN KEY
+(
+    genre_id
+) REFERENCES Genres
+(
+    genre_id
+)
+  ON DELETE CASCADE,
+    PRIMARY KEY
+(
+    film_id,
+    genre_id
+)
+    );
 
-CREATE TABLE IF NOT EXISTS Films (
-                                     film_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                     name VARCHAR(255) NOT NULL,
-                                     description VARCHAR(200) NOT NULL,
-                                     release_date DATE NOT NULL,
-                                     duration INT NOT NULL,
-                                     mpa_id BIGINT,
-                                     FOREIGN KEY (mpa_id) REFERENCES MpaRatings(mpa_id) ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS Likes
+(
+    film_id
+    INTEGER
+    NOT
+    NULL,
+    liked_user_id
+    INTEGER
+    NOT
+    NULL,
+    CONSTRAINT
+    fk_film_id1
+    FOREIGN
+    KEY
+(
+    film_id
+) REFERENCES Films
+(
+    film_id
+) ON DELETE CASCADE,
+    CONSTRAINT fk_liked_user_id FOREIGN KEY
+(
+    liked_user_id
+) REFERENCES Users
+(
+    user_id
+)
+  ON DELETE CASCADE,
+    PRIMARY KEY
+(
+    film_id,
+    liked_user_id
+)
+    );
 
-CREATE TABLE IF NOT EXISTS Genres (
-                        genre_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                        name VARCHAR(50) NOT NULL UNIQUE
-);
+CREATE TABLE IF NOT EXISTS Directors
+(
+    director_id
+    INTEGER
+    GENERATED
+    BY
+    DEFAULT AS
+    IDENTITY
+    PRIMARY
+    KEY,
+    director_name
+    VARCHAR
+(
+    255
+) NOT NULL
+    );
 
-CREATE TABLE IF NOT EXISTS FilmGenres (
-                            film_id BIGINT,
-                            genre_id BIGINT,
-                            PRIMARY KEY (film_id, genre_id),
-                            FOREIGN KEY (film_id) REFERENCES Films(film_id),
-                            FOREIGN KEY (genre_id) REFERENCES Genres(genre_id)
-);
+CREATE TABLE IF NOT EXISTS FilmDirectors
+(
+    film_id
+    INTEGER
+    NOT
+    NULL,
+    director_id
+    INTEGER
+    NOT
+    NULL,
+    CONSTRAINT
+    fk_film_id3
+    FOREIGN
+    KEY
+(
+    film_id
+) REFERENCES Films
+(
+    film_id
+) ON DELETE CASCADE,
+    CONSTRAINT fk_director_id FOREIGN KEY
+(
+    director_id
+) REFERENCES Directors
+(
+    director_id
+)
+  ON DELETE CASCADE,
+    PRIMARY KEY
+(
+    film_id,
+    director_id
+)
+    );
 
-CREATE TABLE IF NOT EXISTS Likes (
-                                     film_id BIGINT,
-                                     user_id BIGINT,
-                                     PRIMARY KEY (film_id, user_id),
-                                     FOREIGN KEY (film_id) REFERENCES Films(film_id),
-                                     FOREIGN KEY (user_id) REFERENCES Users(user_id)
-);
+CREATE TABLE IF NOT EXISTS Feed
+(
+    event_id
+    INTEGER
+    PRIMARY
+    KEY
+    AUTO_INCREMENT,
+    entity_id
+    INTEGER
+    NOT
+    NULL,
+    user_id
+    INTEGER
+    NOT
+    NULL,
+    time_stamp
+    TIMESTAMP
+    NOT
+    NULL,
+    event_type
+    VARCHAR
+(
+    255
+) NOT NULL,
+    operation VARCHAR
+(
+    255
+) NOT NULL,
+    CONSTRAINT feed_users_id_fk FOREIGN KEY
+(
+    user_id
+) REFERENCES Users
+(
+    user_id
+) ON DELETE CASCADE
+    );

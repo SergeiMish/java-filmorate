@@ -7,103 +7,133 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
-import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
 import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.mappers.UserRowMapper;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.Timestamp;
-import java.util.Collection;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
+import static ru.yandex.practicum.filmorate.utils.ErrorMessages.USER_NOT_FOUND;
 
 @Repository
 @RequiredArgsConstructor
-public class UserDao implements UserStorage, FriendshipStorage {
+public class UserDao implements UserStorage {
+
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
 
     @Override
-    public User create(User user) {
-        String sqlQuery = "INSERT INTO users (email, login, name, birthday) " +
-                "VALUES (?, ?, ?, ?)";
+    public List<User> findAll() {
+        return jdbcTemplate.query("SELECT * FROM Users", userRowMapper);
+    }
+
+    @Override
+    public User add(User user) {
+        String sql = "INSERT INTO Users (user_name, login, email, birthday) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"user_id"});
-            stmt.setString(1, user.getEmail());
-            stmt.setString(2, user.getLogin());
-            stmt.setString(3, user.getName());
-            stmt.setTimestamp(4, Timestamp.valueOf(user.getBirthday().atStartOfDay()));
-            return stmt;
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, user.getName());
+            ps.setString(2, user.getLogin());
+            ps.setString(3, user.getEmail());
+            ps.setDate(4, Date.valueOf(user.getBirthday()));
+            return ps;
         }, keyHolder);
 
-        user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        Integer generatedId = Objects.requireNonNull(keyHolder.getKey()).intValue();
+        user.setId(generatedId);
 
         return user;
     }
 
     @Override
-    public boolean delete(Long id) {
-        String sqlQuery = "DELETE FROM users WHERE user_id = ?";
-        return jdbcTemplate.update(sqlQuery, id) > 0;
+    public void removeUser(Integer id) {
+        String deleteUserSql = "DELETE FROM Users WHERE user_id = ?";
+        jdbcTemplate.update(deleteUserSql, id);
     }
 
+    @Override
     public User update(User user) {
-        String sqlQuery = "UPDATE users SET " +
-                "email = ?, login = ?, name = ?, birthday = ? " +
+        String sql = "UPDATE Users SET " +
+                "user_name = ?, login = ?, email = ?, birthday = ? " +
                 "WHERE user_id = ?";
-        int rowsAffected = jdbcTemplate.update(sqlQuery,
-                user.getEmail(),
-                user.getLogin(),
+
+        int rowsAffected = jdbcTemplate.update(sql,
                 user.getName(),
-                Timestamp.valueOf(user.getBirthday().atStartOfDay()),
-                user.getId()
-        );
+                user.getLogin(),
+                user.getEmail(),
+                Date.valueOf(user.getBirthday()),
+                user.getId());
 
         if (rowsAffected == 0) {
-            throw new NotFoundObjectException("Не найден пользователь с ID: " + user.getId());
+            throw new NotFoundObjectException(USER_NOT_FOUND + user.getId());
         }
-
         return user;
     }
 
     @Override
-    public User getById(Long id) {
-        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users WHERE user_id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, userRowMapper, id);
-        } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundObjectException("User not found with id: " + id);
-        }
+    public boolean contains(Integer id) {
+        String sql = "SELECT COUNT(*) FROM Users WHERE user_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, id);
+        return count != null && count > 0;
     }
 
     @Override
-    public Collection<User> getAll() {
-        String sqlQuery = "SELECT user_id, email, login, name, birthday FROM users ORDER BY user_id ASC";
-        return jdbcTemplate.query(sqlQuery, userRowMapper);
+    public Optional<User> findById(int id) {
+        String sql = "SELECT * FROM Users WHERE user_id = ?";
+        try {
+            User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
+            return Optional.of(user);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
-    public void addFriend(Long user1Id, Long user2Id) {
-        String sqlQueryAddFriend = "INSERT INTO friendships(user1_id, user2_id) VALUES (?, ?)";
-        jdbcTemplate.update(sqlQueryAddFriend, user1Id, user2Id);
+    public List<User> getFriendsbyUserId(int userId) {
+        if (!this.contains(userId)) {
+            throw new NotFoundObjectException("Can't find friends of non-existing user");
+        }
+
+        String friends = "SELECT * FROM Users " +
+                "WHERE user_id IN (SELECT friend_id FROM Friendships WHERE user_id = ?);";
+
+        return jdbcTemplate.query(friends, userRowMapper, userId);
     }
 
-    public void removeFriend(Long user1Id, Long user2Id) {
-        String sqlQuery = "DELETE FROM friendships WHERE user1_id = ? AND user2_id = ?";
-        jdbcTemplate.update(sqlQuery, user1Id, user2Id);
+    @Override
+    public List<User> getCommonFriends(int userId, int friendId) {
+        String sql = "SELECT u.* " +
+                "FROM Users AS u " +
+                "JOIN Friendships AS fs1 ON u.user_id = fs1.friend_id " +
+                "JOIN Friendships AS fs2 ON u.user_id = fs2.friend_id " +
+                "WHERE fs1.user_id = ? AND fs2.user_id = ?;";
+
+        return jdbcTemplate.query(sql, userRowMapper, userId, friendId);
     }
 
-    public List<Long> getFriendIds(Long userId) {
-        String sqlQueryUser2 = "SELECT user2_id FROM friendships WHERE user1_id = ?";
-        return jdbcTemplate.queryForList(sqlQueryUser2, Long.class, userId);
+    @Override
+    public void addFriendship(Integer userId, Integer friendId) {
+        String sql = "INSERT INTO Friendships (user_id, friend_id) VALUES (?, ?)";
+
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
-    public boolean isFriendshipExists(Long user1Id, Long user2Id) {
-        String sqlQuery = "SELECT COUNT(*) FROM friendships WHERE user1_id = ? AND user2_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sqlQuery, Integer.class, user1Id, user2Id);
-        return count != null && count > 0;
+    @Override
+    public void removeFriendship(Integer userId, Integer friendId) {
+        String sql = "DELETE FROM Friendships WHERE user_id = ? AND friend_id = ?";
+
+        jdbcTemplate.update(sql, userId, friendId);
+    }
+
+    @Override
+    public void removeAll() {
+        String sql = "DELETE FROM Users";
+        jdbcTemplate.update(sql);
     }
 }

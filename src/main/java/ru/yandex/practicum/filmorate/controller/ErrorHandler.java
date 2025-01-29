@@ -1,74 +1,57 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.yandex.practicum.filmorate.exeption.MpaNotFoundException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.yandex.practicum.filmorate.exeption.NotFoundObjectException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
-import ru.yandex.practicum.filmorate.model.ErrorResponse;
 
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-@RestControllerAdvice
+@Slf4j
+@ControllerAdvice
 public class ErrorHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(ErrorHandler.class);
+    private static final String ERROR = "error";
 
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationException(final ValidationException e) {
-        logger.error("Validation error: {}", e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    private static final String MESSAGE = "message";
+
+    @ExceptionHandler(NotFoundObjectException.class)
+    public ResponseEntity<Map<String, String>> handleNotFoundException(NotFoundObjectException ex) {
+        log.error("Not found error: {}", ex.getMessage());
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put(ERROR, "Not Found");
+        errorResponse.put(MESSAGE, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleNotFoundObjectException(final NotFoundObjectException e) {
-        logger.error("Not found error: {}", e.getMessage());
-        return new ErrorResponse(e.getMessage());
+    @ExceptionHandler({ValidationException.class, MethodArgumentNotValidException.class})
+    public ResponseEntity<Map<String, String>> handleValidationException(ValidationException ex) {
+        log.error("Validation error: {}", ex.getMessage());
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put(ERROR, "Validation doesn't pass");
+        errorResponse.put(MESSAGE, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleGenericException(final Exception e) {
-        logger.error("Unexpected error: ", e);
-        return new ErrorResponse("Произошла непредвиденная ошибка.");
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
+        log.error("Unexpected error: {}", ex.getMessage());
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put(ERROR, "Unexpected error");
+        errorResponse.put(MESSAGE, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-        logger.error("Method argument validation error: {}", errorMessage);
-        return new ErrorResponse(errorMessage);
-    }
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleConstraintViolationException(ConstraintViolationException ex) {
-        String errorMessage = ex.getConstraintViolations().stream()
-                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
-                .collect(Collectors.joining(", "));
-        logger.error("Constraint violation error: {}", errorMessage);
-        return new ErrorResponse(errorMessage);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(MpaNotFoundException.class)
-    public ResponseEntity<String> handleMpaNotFoundException(MpaNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String error = "Invalid sortBy parameter: '" + ex.getValue() + "'. Allowed values - YEAR, LIKES";
+        return ResponseEntity.badRequest().body(Collections.singletonMap("error", error));
     }
 }

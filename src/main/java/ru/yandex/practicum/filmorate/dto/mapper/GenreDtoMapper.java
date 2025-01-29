@@ -1,20 +1,45 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.model.Genre;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Component
 public class GenreDtoMapper {
-    public static GenreDto toDto(Genre model) {
+
+    public GenreDto map(Genre genre) {
         return GenreDto.builder()
-                .id(model.getId())
-                .name(model.getName())
+                .id(genre.getId())
+                .name(genre.getName())
                 .build();
     }
 
-    public static Genre toModel(GenreDto genreDto) {
+    public Genre map(GenreDto genre) {
         return Genre.builder()
-                .id(genreDto.getId())
-                .name(genreDto.getName())
+                .id(genre.getId())
+                .name(genre.getName())
                 .build();
+    }
+
+    public LinkedHashSet<Genre> mapToGenreList(Set<GenreDto> genreDtos) {
+        if (genreDtos == null) {
+            return new LinkedHashSet<>();
+        }
+        return genreDtos.stream()
+                .map(this::map)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    public LinkedHashSet<GenreDto> mapToGenreDtoList(Set<Genre> genres) {
+        if (genres == null) {
+            return new LinkedHashSet<>();
+        }
+        return genres.stream()
+                .map(this::map)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

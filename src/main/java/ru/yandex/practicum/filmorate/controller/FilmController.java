@@ -1,81 +1,107 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.mapper.FilmDtoMapper;
-import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.enums.SortParam;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.validator.ValidateFilm;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
+@Slf4j
 @Validated
 @RestController
-@Slf4j
 @RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
 
-    private final FilmStorage filmStorage;
-    private final FilmService filmService;
-    private final ValidateFilm filmValidator;
+    private static final int FIRST_FILM_BIRTHDAY = 1895;
 
-    @PostMapping
-    public ResponseEntity<FilmDto> postFilm(@RequestBody @Valid FilmDto filmDto) {
-        log.info("Received request to create film: {}", filmDto);
-        Film film = FilmDtoMapper.toModel(filmDto);
-        filmValidator.validateFilm(film);
-        Film createdFilm = filmStorage.create(film);
-        log.info("Film created successfully: {}", createdFilm);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(createdFilm));
-    }
+    private final FilmService service;
+
+    private final FilmDtoMapper filmMapper;
 
     @GetMapping
-    public Collection<FilmDto> getFilms() {
-        return filmStorage.getAll().stream()
-                .map(FilmDtoMapper::toDto)
-                .collect(Collectors.toList());
+    public List<FilmDto> findAll() {
+        List<Film> films = service.getFilms();
+        return films.stream()
+                .map(filmMapper::map)
+                .toList();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<FilmDto> getFilmById(@PathVariable Long id) {
-        Film film = filmStorage.getById(id);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public FilmDto create(@Valid @RequestBody FilmDto filmDto) {
+        Film createdFilm = service.create(filmDto);
+        return filmMapper.map(createdFilm);
     }
 
-    @GetMapping("/popular")
-    public List<FilmDto> getPopularFilms(@RequestParam(value = "count", defaultValue = "10") @Positive int count) {
-        return filmService.mostPopularFilms(count).stream()
-                .map(FilmDtoMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @PutMapping("/{id}/like/{userId}")
-    public ResponseEntity<FilmDto> addLike(@PathVariable Long id, @PathVariable Long userId) {
-        Film film = filmService.addLike(id, userId);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
-    }
-
-    @DeleteMapping("/{id}/like/{userId}")
-    public ResponseEntity<FilmDto> deleteLike(@PathVariable Long id, @PathVariable Long userId) {
-        Film film = filmService.removeLike(id, userId);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(film));
+    @DeleteMapping("/{filmId}")
+    public void removeFilm(@PathVariable Integer filmId) {
+        service.removeFilm(filmId);
     }
 
     @PutMapping
-    public ResponseEntity<FilmDto> putFilm(@Valid @RequestBody FilmDto filmDto) {
-        Film film = FilmDtoMapper.toModel(filmDto);
-        filmValidator.validateFilm(film);
-        Film updatedFilm = filmStorage.update(film);
-        return ResponseEntity.ok(FilmDtoMapper.toDto(updatedFilm));
+    public FilmDto updateFilm(@Valid @RequestBody FilmDto filmDto) {
+        Film updatedFilm = service.updateFilm(filmDto);
+        return filmMapper.map(updatedFilm);
+    }
+
+    @GetMapping("/{id}")
+    public FilmDto getFilm(@PathVariable int id) {
+        Film film = service.findFilmById(id);
+        return filmMapper.map(film);
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public void likeFilm(@PathVariable Integer id, @PathVariable Integer userId) {
+        service.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void unlikeFilm(@PathVariable Integer id, @PathVariable Integer userId) {
+        service.removeLike(id, userId);
+    }
+
+    @GetMapping("/popular")
+    public List<FilmDto> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count,
+                                         @Positive @RequestParam(required = false) Integer genreId,
+                                         @Min(value = FIRST_FILM_BIRTHDAY) @RequestParam(required = false) Integer year) {
+        return service.getPopularFilms(count, genreId, year);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<Object> getFilmsByDirector(@PathVariable Integer directorId,
+                                                     @RequestParam(name = "sortBy", required = false, defaultValue = "YEAR") String sortBy) {
+        try {
+            SortParam sortParam = SortParam.valueOf(sortBy.toUpperCase());
+            return service.getFilmsByDirectorSorted(directorId, sortParam, filmMapper);
+        } catch (IllegalArgumentException e) {
+            String error = "Invalid sortBy parameter: '" + sortBy + "'. Allowed values - YEAR, LIKES";
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", error));
+        }
+    }
+
+    @GetMapping("/common")
+    public ResponseEntity<Object> getCommonFilms(@RequestParam("userId") int userId,
+                                                 @RequestParam("friendId") int friendId) {
+        List<FilmDto> filmDto = service.getCommonFilms(userId, friendId);
+        return ResponseEntity.ok(filmDto);
+    }
+
+    @GetMapping("/search")
+    public List<Film> searchFilms(@RequestParam() String query, @RequestParam() Set<String> by) {
+        return service.searchFilms(query, by);
     }
 }

@@ -1,41 +1,54 @@
 package ru.yandex.practicum.filmorate.dto.mapper;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.stream.Collectors;
-
+@Component
+@RequiredArgsConstructor
 public class FilmDtoMapper {
 
-    public static FilmDto toDto(Film model) {
-        return FilmDto.builder()
-                .id(model.getId())
-                .name(model.getName())
-                .description(model.getDescription())
-                .releaseDate(model.getReleaseDate())
-                .duration(model.getDuration())
-                .likes(model.getLikes() != null ? new HashSet<>(model.getLikes()) : new HashSet<>())
-                .genres(model.getGenres() != null ? model.getGenres().stream()
-                        .map(GenreDtoMapper::toDto)
-                        .collect(Collectors.toList()) : new ArrayList<>())
-                .mpa(model.getMpa())
+    private final GenreDtoMapper genreMapper;
+    private final MpaDtoMapper ratingMapper;
+    private final DirectorDtoMapper directorMapper;
+
+    public Film map(CreateFilmDto dto) {
+        return Film.builder()
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .mpa(ratingMapper.map(dto.getMpa()))
+                .releaseDate(dto.getReleaseDate())
+                .duration(dto.getDuration())
+                .genres(genreMapper.mapToGenreList(dto.getGenres()))
+                .directors(directorMapper.mapToDirectorList(dto.getDirectors()))
                 .build();
     }
 
-    public static Film toModel(FilmDto filmDto) {
+    public Film map(FilmDto dto) {
         return Film.builder()
-                .id(filmDto.getId())
-                .name(filmDto.getName())
-                .description(filmDto.getDescription())
-                .releaseDate(filmDto.getReleaseDate())
-                .duration(filmDto.getDuration())
-                .likes(filmDto.getLikes() != null ? new HashSet<>(filmDto.getLikes()) : new HashSet<>())
-                .genres(filmDto.getGenres() != null ? filmDto.getGenres().stream()
-                        .map(GenreDtoMapper::toModel)
-                        .collect(Collectors.toList()) : new ArrayList<>())
-                .mpa(filmDto.getMpa())
+                .id(dto.getId())
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .mpa(ratingMapper.map(dto.getMpa()))
+                .releaseDate(dto.getReleaseDate())
+                .duration(dto.getDuration())
+                .genres(genreMapper.mapToGenreList(dto.getGenres()))
+                .directors(directorMapper.mapToDirectorList(dto.getDirectors()))
+                .build();
+    }
+
+    public FilmDto map(Film film) {
+        return FilmDto.builder()
+                .id(film.getId())
+                .name(film.getName())
+                .description(film.getDescription())
+                .mpa(ratingMapper.map(film.getMpa()))
+                .releaseDate(film.getReleaseDate())
+                .duration(film.getDuration())
+                .genres(genreMapper.mapToGenreDtoList(film.getGenres()))
+                .directors(directorMapper.mapToDirectorDtoList(film.getDirectors()))
                 .build();
     }
 }
