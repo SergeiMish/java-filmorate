@@ -78,19 +78,7 @@ public class FilmController {
     public List<FilmDto> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count,
                                          @Positive @RequestParam(required = false) Integer genreId,
                                          @Min(value = FIRST_FILM_BIRTHDAY) @RequestParam(required = false) Integer year) {
-        List<Film> films;
-        if (genreId == null && year == null) {
-            films = service.getMostPopularFilms(count);
-        } else if (genreId != null && year == null) {
-            films = service.getPopularFilmsSortedByGenre(count, genreId);
-        } else if (genreId != null) {
-            films = service.getPopularFilmsSortedByGenreAndYear(count, genreId, year);
-        } else {
-            films = service.getPopularFilmsSortedByYear(count, year);
-        }
-        return films.stream()
-                .map(filmMapper::map)
-                .toList();
+        return service.getPopularFilms(count, genreId, year);
     }
 
     @GetMapping("/director/{directorId}")

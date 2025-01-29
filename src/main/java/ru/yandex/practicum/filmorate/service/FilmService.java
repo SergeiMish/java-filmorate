@@ -256,4 +256,24 @@ public class FilmService {
     public List<Film> getFilmRecommendationsForUser(int userId) {
         return getFilmsFullData(filmStorage.getFilmRecommendationsForUser(userId));
     }
+
+    public List<FilmDto> getPopularFilms(int count, Integer genreId, Integer year) {
+        List<Film> films = determinePopularFilms(count, genreId, year);
+        return films.stream()
+                .map(filmDtoMapper::map)
+                .toList();
+    }
+
+    private List<Film> determinePopularFilms(int count, Integer genreId, Integer year) {
+        if (genreId == null && year == null) {
+            return getMostPopularFilms(count);
+        }
+        if (genreId != null && year == null) {
+            return getPopularFilmsSortedByGenre(count, genreId);
+        }
+        if (genreId != null) {
+            return getPopularFilmsSortedByGenreAndYear(count, genreId, year);
+        }
+        return getPopularFilmsSortedByYear(count, year);
+    }
 }
