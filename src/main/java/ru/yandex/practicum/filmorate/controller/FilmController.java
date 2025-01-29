@@ -95,7 +95,7 @@ public class FilmController {
 
     @GetMapping("/director/{directorId}")
     public ResponseEntity<Object> getFilmsByDirector(@PathVariable Integer directorId,
-                                                      @RequestParam(name = "sortBy", required = false, defaultValue = "YEAR") String sortBy) {
+                                                     @RequestParam(name = "sortBy", required = false, defaultValue = "YEAR") String sortBy) {
         try {
             SortParam sortParam = SortParam.valueOf(sortBy.toUpperCase());
             return service.getFilmsByDirectorSorted(directorId, sortParam, filmMapper);

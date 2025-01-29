@@ -22,7 +22,7 @@ public class MpaDao implements RatingStorage {
     @Override
     public List<Mpa> findAllMpaRatings() {
         String sql = "SELECT * FROM MpaRatings r " +
-                    "ORDER BY r.mpa_id;";
+                "ORDER BY r.mpa_id;";
         return jdbcTemplate.query(sql, ratingRowMapper);
     }
 

@@ -18,9 +18,12 @@ import ru.yandex.practicum.filmorate.service.film.searching.SearchByDirector;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchByDirectorAndTitle;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchByTitle;
 import ru.yandex.practicum.filmorate.service.film.searching.SearchStrategy;
-import ru.yandex.practicum.filmorate.service.sorting.*;
+import ru.yandex.practicum.filmorate.service.sorting.SortStrategy;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ru.yandex.practicum.filmorate.model.enums.EventType.LIKE;
@@ -33,19 +36,17 @@ import static ru.yandex.practicum.filmorate.utils.ErrorMessages.*;
 @RequiredArgsConstructor
 public class FilmService {
 
+    private static final Map<Set<String>, SearchStrategy> SEARCH__FILMS_STRATEGIES = Map.of(
+            Set.of("director"), new SearchByDirector(),
+            Set.of("title"), new SearchByTitle(),
+            Set.of("director", "title"), new SearchByDirectorAndTitle()
+    );
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
     private final FeedStorage feedStorage;
     private final RatingStorage ratingStorage;
     private final GenreStorage genreStorage;
     private final DirectorStorage directorStorage;
-
-
-    private static final Map<Set<String>, SearchStrategy> SEARCH__FILMS_STRATEGIES = Map.of(
-            Set.of("director"), new SearchByDirector(),
-            Set.of("title"), new SearchByTitle(),
-            Set.of("director", "title"), new SearchByDirectorAndTitle()
-    );
     private final FilmDtoMapper filmDtoMapper;
 
     private List<Film> getFilmsFullData(List<Film> films) {
